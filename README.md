@@ -4,6 +4,7 @@ A static Next.js dashboard for Webex Calling workflows. It includes a screen pop
 
 ## Stack
 
+- Node.js 24
 - Next.js App Router with TypeScript
 - Tailwind CSS
 - Lucide React icons
@@ -12,7 +13,10 @@ A static Next.js dashboard for Webex Calling workflows. It includes a screen pop
 
 ## Getting Started
 
+Use Node.js 24 before installing dependencies.
+
 ```bash
+nvm use
 npm install
 npm run dev
 ```
