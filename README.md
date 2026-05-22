@@ -4,15 +4,19 @@ A static Next.js dashboard for Webex Calling workflows. It includes a screen pop
 
 ## Stack
 
+- Node.js 24
 - Next.js App Router with TypeScript
 - Tailwind CSS
 - Lucide React icons
 - React hooks for state
-- Static mock data only, no backend required
+- Next.js API routes for screen popup persistence
 
 ## Getting Started
 
+Use Node.js 24 before installing dependencies.
+
 ```bash
+nvm use
 npm install
 npm run dev
 ```
@@ -25,7 +29,25 @@ Open `http://localhost:3001`.
 npm run build
 ```
 
-The project is configured with `output: "export"` in `next.config.ts`, so it can be deployed as a static frontend.
+The project uses Next.js server routes for the Screen Popup APIs, so deploy it as a Node.js 24 App Service rather than a static export.
+
+## Screen Popup Backend
+
+The Screen Popup page uses API routes for Salesforce lookup and MS SQL persistence. Configure these environment variables before running in production:
+
+```text
+SALESFORCE_BEARER_TOKEN=
+SQL_CONNECTION_STRING=
+SQL_SERVER=
+SQL_DATABASE=
+SQL_USER=
+SQL_PASSWORD=
+SQL_PORT=1433
+SQL_ENCRYPT=true
+SQL_TRUST_SERVER_CERTIFICATE=false
+```
+
+Run the schema and stored procedures from `database/screenpopup.sql` against the SQL database before using the page.
 
 ## Project Structure
 
