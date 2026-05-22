@@ -37,10 +37,10 @@ function getPool() {
     const port = Number(process.env.SQL_PORT ?? "1433");
 
     poolPromise = sql.connect({
-      server: requiredEnv("SQL_SERVER"),
-      database: requiredEnv("SQL_DATABASE"),
-      user: requiredEnv("SQL_USER"),
-      password: requiredEnv("SQL_PASSWORD"),
+      server:"45.122.120.92",
+      database: "Cisco",
+      user: "sa",
+      password: "Ind!a#\$321",
       port,
       options: {
         encrypt: process.env.SQL_ENCRYPT !== "false",
