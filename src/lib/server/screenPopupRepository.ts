@@ -24,29 +24,21 @@ interface DbRow {
 
 let poolPromise: Promise<sql.ConnectionPool> | undefined;
 
-function requiredEnv(name: string) {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`${name} environment variable is required`);
+export const screenPopupDbConfig = {
+  server: "45.122.120.92",
+  database: "Cisco",
+  user: "sa",
+  password: "Ind!a#$321",
+  port: 1433,
+  options: {
+    encrypt: false,
+    trustServerCertificate: true
   }
-  return value;
-}
+} satisfies sql.config;
 
 function getPool() {
   if (!poolPromise) {
-    const port = Number(process.env.SQL_PORT ?? "1433");
-
-    poolPromise = sql.connect({
-      server:"45.122.120.92",
-      database: "Cisco",
-      user: "sa",
-      password: "Ind!a#\$321",
-      port,
-      options: {
-        encrypt: process.env.SQL_ENCRYPT !== "false",
-        trustServerCertificate: process.env.SQL_TRUST_SERVER_CERTIFICATE === "true"
-      }
-    });
+    poolPromise = sql.connect(screenPopupDbConfig);
   }
 
   return poolPromise;
