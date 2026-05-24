@@ -18,6 +18,8 @@ const queryKeys: Array<keyof ScreenPopupCallInfo> = [
   "QueueName",
   "TenantID"
 ];
+const salesforceBearerToken =
+  "00Df600000MVM1N!AQEAQJEsxlVrgGcQC15MJXCtcZu1V4_9mVsxPbkhP2Zihl4MsQaA01nY6oM_f4lE3qPEOjcrF991zL.HnOHT4.BANJvLsvEA";
 
 interface SalesforceContactResponse {
   totalSize: number;
@@ -114,12 +116,6 @@ function readCallInfo(searchParams: URLSearchParams): ScreenPopupCallInfo {
 }
 
 async function fetchSalesforceContact(ani: string): Promise<SalesforceContactResponse> {
-  const token = process.env.SALESFORCE_BEARER_TOKEN;
-
-  if (!token) {
-    throw new Error("SALESFORCE_BEARER_TOKEN environment variable is required");
-  }
-
   const soql = `SELECT Email,name,id,phone,MailingCity,MailingCountry from contact where phone ='${escapeSoql(
     ani
   )}'`;
@@ -128,7 +124,7 @@ async function fetchSalesforceContact(ani: string): Promise<SalesforceContactRes
   )}`;
   const response = await fetch(url, {
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${salesforceBearerToken}`,
       Accept: "application/json"
     },
     cache: "no-store"

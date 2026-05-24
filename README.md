@@ -33,12 +33,8 @@ The project uses Next.js server routes for the Screen Popup APIs, so deploy it a
 
 ## Screen Popup Backend
 
-The Screen Popup page uses API routes for Salesforce lookup and MS SQL persistence. Configure the Salesforce token before running in production:
-
-```text
-SALESFORCE_BEARER_TOKEN=
-```
-
+The Screen Popup page uses API routes for Salesforce lookup and MS SQL persistence.
+The Salesforce token is configured in `src/app/api/screen-popup/route.ts`.
 The MS SQL connection is configured in `src/lib/server/screenPopupRepository.ts`.
 
 Run the schema and stored procedures from `database/screenpopup.sql` against the SQL database before using the page.
