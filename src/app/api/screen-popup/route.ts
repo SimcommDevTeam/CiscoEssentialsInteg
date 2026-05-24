@@ -114,7 +114,7 @@ function readCallInfo(searchParams: URLSearchParams): ScreenPopupCallInfo {
 }
 
 async function fetchSalesforceContact(ani: string): Promise<SalesforceContactResponse> {
-  const token = "00Df600000MVM1N!AQEAQJEsxlVrgGcQC15MJXCtcZu1V4_9mVsxPbkhP2Zihl4MsQaA01nY6oM_f4lE3qPEOjcrF991zL.HnOHT4.BANJvLsvEA";
+  const token = "00Df600000MVM1N!AQEAQCWqQ_qbCzIhyWK4QUS7t6a9zp5DjrL7hVwU9LC.sZLi.o96hIKEeDGS5tuA0c8kXvced56M0eOfqyJv.zngJcabhTC5 ";
 
   if (!token) {
     throw new Error("SALESFORCE_BEARER_TOKEN environment variable is required");
