@@ -18,8 +18,7 @@ const queryKeys: Array<keyof ScreenPopupCallInfo> = [
   "QueueName",
   "TenantID"
 ];
-const salesforceBearerToken =
-  "00Df600000MVM1N!AQEAQGof9YHKPJW5oiZkq.iuToGYkhs_EFNMxLlMTIhQWYFPmSx64FPtCLLx1XdPWTxzu_eWv1otsSIUdwI7e.wR4oKiWMyf";
+
 interface SalesforceContactResponse {
   totalSize: number;
   done: boolean;
@@ -129,7 +128,7 @@ async function fetchSalesforceContact(ani: string): Promise<SalesforceContactRes
   )}`;
   const response = await fetch(url, {
     headers: {
-      Authorization: `Bearer ${salesforceBearerToken}`,
+      Authorization: `Bearer ${token}`,
       Accept: "application/json"
     },
     cache: "no-store"
