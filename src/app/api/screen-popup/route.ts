@@ -19,8 +19,7 @@ const queryKeys: Array<keyof ScreenPopupCallInfo> = [
   "TenantID"
 ];
 const salesforceBearerToken =
-  "00Df600000MVM1N!AQEAQJEsxlVrgGcQC15MJXCtcZu1V4_9mVsxPbkhP2Zihl4MsQaA01nY6oM_f4lE3qPEOjcrF991zL.HnOHT4.BANJvLsvEA";
-
+  "00Df600000MVM1N!AQEAQGof9YHKPJW5oiZkq.iuToGYkhs_EFNMxLlMTIhQWYFPmSx64FPtCLLx1XdPWTxzu_eWv1otsSIUdwI7e.wR4oKiWMyf";
 interface SalesforceContactResponse {
   totalSize: number;
   done: boolean;
