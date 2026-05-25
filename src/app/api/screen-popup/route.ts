@@ -115,6 +115,12 @@ function readCallInfo(searchParams: URLSearchParams): ScreenPopupCallInfo {
 }
 
 async function fetchSalesforceContact(ani: string): Promise<SalesforceContactResponse> {
+  const token = process.env.SALESFORCE_BEARER_TOKEN;
+
+  if (!token) {
+    throw new Error("SALESFORCE_BEARER_TOKEN environment variable is required");
+  }
+
   const soql = `SELECT Email,name,id,phone,MailingCity,MailingCountry from contact where phone ='${escapeSoql(
     ani
   )}'`;
