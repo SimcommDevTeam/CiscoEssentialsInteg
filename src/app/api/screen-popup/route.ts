@@ -114,9 +114,9 @@ function readCallInfo(searchParams: URLSearchParams): ScreenPopupCallInfo {
 }
 
 async function fetchSalesforceContact(ani: string): Promise<SalesforceContactResponse> {
-  const token = process.env.SALESFORCE_BEARER_TOKEN;
+  const Salestoken = process.env.SALESFORCE_BEARER_TOKEN;
 
-  if (!token) {
+  if (!Salestoken) {
     throw new Error("SALESFORCE_BEARER_TOKEN environment variable is required");
   }
 
@@ -128,7 +128,7 @@ async function fetchSalesforceContact(ani: string): Promise<SalesforceContactRes
   )}`;
   const response = await fetch(url, {
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${Salestoken}`,
       Accept: "application/json"
     },
     cache: "no-store"
