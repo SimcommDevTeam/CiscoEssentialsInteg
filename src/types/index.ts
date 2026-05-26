@@ -29,6 +29,7 @@ export interface ScreenPopupCustomerInfo {
 export interface ScreenPopupRecord {
   id: number;
   status: "active" | "ended" | string;
+  disposition: string | null;
   createdAt: string;
   updatedAt: string | null;
   callInfo: ScreenPopupCallInfo;
@@ -42,7 +43,7 @@ export interface CallRecording {
   ani: string;
   dnis: string;
   duration: string;
-  callType: "Inbound" | "Outbound" | "Internal";
+  callType: string;
   recordingUrl: string;
   recordingFileName: string;
 }

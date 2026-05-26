@@ -2,7 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-
 :root {
   color-scheme: light;
 }
@@ -14,8 +13,8 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: #f5f8fb;
-  color: #172b4d;
+  background-color: #F3F6FA;
+  color: #1A2B3C;
 }
 
 button,
@@ -27,6 +26,6 @@ select {
 button:focus-visible,
 input:focus-visible,
 select:focus-visible {
-  outline: 3px solid rgba(0, 188, 235, 0.35);
+  outline: 2px solid #00BCEB;
   outline-offset: 2px;
 }

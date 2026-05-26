@@ -17,8 +17,15 @@ interface DbRow {
   Phone: string | null;
   MailingCity: string | null;
   MailingCountry: string | null;
+  Disposition: string | null;
   Status: string;
   CreatedAt: Date;
+  UpdatedAt: Date | null;
+}
+
+interface DispositionRow {
+  Id: number;
+  Disposition: string | null;
   UpdatedAt: Date | null;
 }
 
@@ -94,10 +101,22 @@ export async function testScreenPopupDbConnection() {
   return result.recordset[0];
 }
 
+export async function saveDisposition(id: number, disposition: string) {
+  const pool = await getPool();
+  const request = pool.request();
+
+  request.input("Id", sql.Int, id);
+  request.input("Disposition", sql.NVarChar(100), disposition);
+
+  const result = await request.execute<DispositionRow>("dbo.usp_SaveDisposition");
+  return result.recordset[0];
+}
+
 function mapRow(row: DbRow): ScreenPopupRecord {
   return {
     id: row.Id,
     status: row.Status,
+    disposition: row.Disposition ?? null,
     createdAt: row.CreatedAt.toISOString(),
     updatedAt: row.UpdatedAt?.toISOString() ?? null,
     callInfo: {
