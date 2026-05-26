@@ -7,6 +7,7 @@ interface WebexRecordingListItem {
   id: string;
   durationSeconds: number;
   status: string;
+  timeRecorded: string;
 }
 
 interface WebexRecordingListResponse {
@@ -15,20 +16,20 @@ interface WebexRecordingListResponse {
 
 interface WebexRecordingMetadata {
   id: string;
-  session: {
-    startTime: string;
-    stopTime: string;
-  };
-  callingParty: {
-    number: string;
-  };
-  calledParty: {
-    number: string;
+  serviceData: {
+    callingParty: {
+      number: string;
+    };
+    calledParty: {
+      number: string;
+    };
   };
 }
 
 interface WebexRecordingDetail {
-  audioDownloadLink: string;
+  temporaryDirectDownloadLinks: {
+    audioDownloadLink: string;
+  };
 }
 
 function getWebexHeaders(): HeadersInit {
@@ -118,15 +119,19 @@ export async function GET(request: NextRequest) {
 
         if (detailResult.status === "fulfilled" && detailResult.value.ok) {
           const detail: WebexRecordingDetail = await detailResult.value.json();
-          audioDownloadLink = detail.audioDownloadLink ?? "";
+          audioDownloadLink = detail.temporaryDirectDownloadLinks?.audioDownloadLink ?? "";
         }
 
         return {
           id: metadata?.id ?? item.id,
-          callStartDate: formatDate(metadata?.session?.startTime ?? ""),
-          callEndDate: formatDate(metadata?.session?.stopTime ?? ""),
-          ani: metadata?.callingParty?.number ?? "",
-          dnis: metadata?.calledParty?.number ?? "",
+          callStartDate: formatDate(item.timeRecorded ?? ""),
+          callEndDate: formatDate(
+            item.timeRecorded
+              ? new Date(new Date(item.timeRecorded).getTime() + (item.durationSeconds ?? 0) * 1000).toISOString()
+              : ""
+          ),
+          ani: metadata?.serviceData?.callingParty?.number ?? "",
+          dnis: metadata?.serviceData?.calledParty?.number ?? "",
           duration: formatDuration(item.durationSeconds ?? 0),
           callType: item.status ?? "",
           recordingUrl: audioDownloadLink,
