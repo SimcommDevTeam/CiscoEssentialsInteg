@@ -6,6 +6,6 @@ export async function GET() {
   return Response.json({
     token: process.env.SALESFORCE_BEARER_TOKEN
       ? "FOUND"
-      : process.env.SALESFORCE_BEARER_TOKEN
+      : "NOT FOUND"
   });
 }
