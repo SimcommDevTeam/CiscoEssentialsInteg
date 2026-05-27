@@ -14,18 +14,14 @@ interface ScreenPopupApiResponse {
   error?: string;
 }
 
-const DISPOSITION_OPTIONS = [
-  "Resolved",
-  "Escalated",
-  "Callback Requested",
-  "Wrong Number",
-  "No Answer",
-  "Voicemail Left",
-  "Follow Up Required",
-  "Transferred to Billing",
-  "Transferred to Technical Support",
-  "Customer Disconnected",
-];
+const DISPOSITION_TREE: Record<string, string[]> = {
+  "Resolved": ["First Call Resolution", "Assisted Resolution", "Self-Service Guided"],
+  "Callback Required": ["Scheduled Callback", "Voicemail Left", "No Answer – Will Retry"],
+  "Transferred": ["Billing", "Technical Support", "Retention", "Sales", "Supervisor"],
+  "Escalated": ["Manager Requested", "Formal Complaint", "Technical Escalation"],
+  "Unable to Resolve": ["Wrong Number", "Customer Disconnected", "Language Barrier", "Repeat Contact"],
+  "Informational": ["General Inquiry", "Status Update", "Account Inquiry"],
+};
 
 const callFields: Array<{ key: keyof ScreenPopupCallInfo; label: string }> = [
   { key: "ANI", label: "ANI" },
@@ -50,7 +46,8 @@ export function ScreenPopupPage() {
   const [error, setError] = useState("");
   const [endedPage, setEndedPage] = useState(1);
 
-  const [disposition, setDisposition] = useState("");
+  const [dispositionCategory, setDispositionCategory] = useState("");
+  const [dispositionSub, setDispositionSub] = useState("");
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [saveError, setSaveError] = useState("");
 
@@ -78,8 +75,8 @@ export function ScreenPopupPage() {
         }
         setData(payload);
         setEndedPage(1);
-        // Pre-populate disposition if one was already saved for this call
-        setDisposition(payload.current?.disposition ?? "");
+        setDispositionCategory(payload.current?.disposition ?? "");
+        setDispositionSub(payload.current?.dispositionSub ?? "");
         setSaveStatus("idle");
       } catch (loadError) {
         if (controller.signal.aborted) return;
@@ -96,14 +93,14 @@ export function ScreenPopupPage() {
   }, []);
 
   async function handleSaveDisposition() {
-    if (!data?.current || !disposition) return;
+    if (!data?.current || !dispositionCategory || !dispositionSub) return;
     setSaveStatus("saving");
     setSaveError("");
     try {
       const response = await fetch("/api/screen-popup", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: data.current.id, disposition })
+        body: JSON.stringify({ id: data.current.id, disposition: dispositionCategory, dispositionSub })
       });
       const payload = await response.json();
       if (!response.ok) {
@@ -139,21 +136,35 @@ export function ScreenPopupPage() {
       <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-webex-muted">
         Disposition
       </label>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-2">
+        {/* Level 1 — category */}
         <select
-          value={disposition}
-          onChange={(e) => { setDisposition(e.target.value); setSaveStatus("idle"); }}
-          className="h-9 flex-1 rounded-md border border-webex-line bg-webex-canvas px-3 text-sm text-webex-ink transition focus:border-webex-blue focus:bg-white focus:outline-none"
+          value={dispositionCategory}
+          onChange={(e) => { setDispositionCategory(e.target.value); setDispositionSub(""); setSaveStatus("idle"); }}
+          className="h-9 w-full rounded-md border border-webex-line bg-webex-canvas px-3 text-sm text-webex-ink transition focus:border-webex-blue focus:bg-white focus:outline-none"
         >
-          <option value="">Select disposition…</option>
-          {DISPOSITION_OPTIONS.map((opt) => (
-            <option key={opt} value={opt}>{opt}</option>
+          <option value="">Select category…</option>
+          {Object.keys(DISPOSITION_TREE).map((cat) => (
+            <option key={cat} value={cat}>{cat}</option>
           ))}
         </select>
+        {/* Level 2 — sub-disposition, appears once category is chosen */}
+        {dispositionCategory && (
+          <select
+            value={dispositionSub}
+            onChange={(e) => { setDispositionSub(e.target.value); setSaveStatus("idle"); }}
+            className="h-9 w-full rounded-md border border-webex-line bg-webex-canvas px-3 text-sm text-webex-ink transition focus:border-webex-blue focus:bg-white focus:outline-none"
+          >
+            <option value="">Select disposition…</option>
+            {(DISPOSITION_TREE[dispositionCategory] ?? []).map((sub) => (
+              <option key={sub} value={sub}>{sub}</option>
+            ))}
+          </select>
+        )}
         <button
           type="button"
           onClick={handleSaveDisposition}
-          disabled={!disposition || saveStatus === "saving"}
+          disabled={!dispositionCategory || !dispositionSub || saveStatus === "saving"}
           className="h-9 rounded-md bg-webex-blue px-4 text-sm font-bold text-white transition hover:bg-webex-blue-dark disabled:cursor-not-allowed disabled:opacity-50"
         >
           {saveStatus === "saving" ? "Saving…" : "Save"}
@@ -276,9 +287,16 @@ export function ScreenPopupPage() {
                       </td>
                       <td className="border-b border-webex-line px-4 py-3 text-sm text-webex-muted">
                         {record.disposition ? (
-                          <span className="inline-flex items-center rounded-md bg-webex-blue-light px-2 py-0.5 text-xs font-semibold text-webex-blue">
-                            {record.disposition}
-                          </span>
+                          <div className="flex flex-col gap-1">
+                            <span className="inline-flex items-center rounded-md bg-webex-blue-light px-2 py-0.5 text-xs font-semibold text-webex-blue">
+                              {record.disposition}
+                            </span>
+                            {record.dispositionSub && (
+                              <span className="inline-flex items-center rounded-md bg-gray-100 px-2 py-0.5 text-xs font-medium text-webex-muted">
+                                {record.dispositionSub}
+                              </span>
+                            )}
+                          </div>
                         ) : "—"}
                       </td>
                       <td className="border-b border-webex-line px-4 py-3 text-sm text-webex-muted">

@@ -30,6 +30,7 @@ export interface ScreenPopupRecord {
   id: number;
   status: "active" | "ended" | string;
   disposition: string | null;
+  dispositionSub: string | null;
   createdAt: string;
   updatedAt: string | null;
   callInfo: ScreenPopupCallInfo;

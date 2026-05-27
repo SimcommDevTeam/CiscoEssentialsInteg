@@ -79,13 +79,24 @@ export async function GET(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, disposition } = body as { id?: unknown; disposition?: unknown };
+    const { id, disposition, dispositionSub } = body as {
+      id?: unknown;
+      disposition?: unknown;
+      dispositionSub?: unknown;
+    };
 
-    if (!id || !disposition || typeof disposition !== "string" || disposition.trim() === "") {
-      return NextResponse.json({ error: "id and disposition are required" }, { status: 400 });
+    if (
+      !id ||
+      !disposition || typeof disposition !== "string" || disposition.trim() === "" ||
+      !dispositionSub || typeof dispositionSub !== "string" || dispositionSub.trim() === ""
+    ) {
+      return NextResponse.json(
+        { error: "id, disposition, and dispositionSub are required" },
+        { status: 400 }
+      );
     }
 
-    const result = await saveDisposition(Number(id), disposition.trim());
+    const result = await saveDisposition(Number(id), disposition.trim(), dispositionSub.trim());
     return NextResponse.json({ success: true, ...result });
   } catch (error) {
     return NextResponse.json({ error: formatError(error) }, { status: 500 });

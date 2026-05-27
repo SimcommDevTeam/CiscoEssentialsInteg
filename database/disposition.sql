@@ -11,7 +11,20 @@ BEGIN
 END;
 GO
 
--- ── Step 2: Update usp_SaveScreenPopupInfo to SELECT Disposition ───────────
+-- ── Step 2: Add DispositionSub column if it does not already exist ──────────
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.columns
+    WHERE object_id = OBJECT_ID(N'dbo.tbl_screenpopupInfo')
+      AND name = N'DispositionSub'
+)
+BEGIN
+    ALTER TABLE dbo.tbl_screenpopupInfo
+        ADD DispositionSub NVARCHAR(100) NULL;
+END;
+GO
+
+-- ── Step 3: Update usp_SaveScreenPopupInfo to SELECT both disposition cols ──
 CREATE OR ALTER PROCEDURE dbo.usp_SaveScreenPopupInfo
     @ANI NVARCHAR(50) = NULL,
     @DNIS NVARCHAR(50) = NULL,
@@ -50,13 +63,13 @@ BEGIN
     SELECT TOP (1)
         Id, ANI, DNIS, InteractionID, AgentID, AgentName, QueueID, QueueName, TenantID,
         CustomerName, Email, CustomerId, Phone, MailingCity, MailingCountry,
-        Disposition, Status, CreatedAt, UpdatedAt
+        Disposition, DispositionSub, Status, CreatedAt, UpdatedAt
     FROM dbo.tbl_screenpopupInfo
     WHERE Id = SCOPE_IDENTITY();
 END;
 GO
 
--- ── Step 3: Update usp_GetScreenPopupInfoByStatus to SELECT Disposition ────
+-- ── Step 4: Update usp_GetScreenPopupInfoByStatus to SELECT both cols ───────
 CREATE OR ALTER PROCEDURE dbo.usp_GetScreenPopupInfoByStatus
     @Status NVARCHAR(20)
 AS
@@ -66,14 +79,14 @@ BEGIN
     SELECT
         Id, ANI, DNIS, InteractionID, AgentID, AgentName, QueueID, QueueName, TenantID,
         CustomerName, Email, CustomerId, Phone, MailingCity, MailingCountry,
-        Disposition, Status, CreatedAt, UpdatedAt
+        Disposition, DispositionSub, Status, CreatedAt, UpdatedAt
     FROM dbo.tbl_screenpopupInfo
     WHERE Status = @Status
     ORDER BY CreatedAt DESC;
 END;
 GO
 
--- ── Step 4: Update usp_UpdateScreenPopupInfoStatus to SELECT Disposition ───
+-- ── Step 5: Update usp_UpdateScreenPopupInfoStatus to SELECT both cols ───────
 CREATE OR ALTER PROCEDURE dbo.usp_UpdateScreenPopupInfoStatus
     @Id INT,
     @Status NVARCHAR(20)
@@ -88,25 +101,28 @@ BEGIN
     SELECT
         Id, ANI, DNIS, InteractionID, AgentID, AgentName, QueueID, QueueName, TenantID,
         CustomerName, Email, CustomerId, Phone, MailingCity, MailingCountry,
-        Disposition, Status, CreatedAt, UpdatedAt
+        Disposition, DispositionSub, Status, CreatedAt, UpdatedAt
     FROM dbo.tbl_screenpopupInfo
     WHERE Id = @Id;
 END;
 GO
 
--- ── Step 5: New SP — save agent disposition for a call record ──────────────
+-- ── Step 6: Save both disposition levels for a call record ──────────────────
 CREATE OR ALTER PROCEDURE dbo.usp_SaveDisposition
     @Id INT,
-    @Disposition NVARCHAR(100)
+    @Disposition NVARCHAR(100),
+    @DispositionSub NVARCHAR(100) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
 
     UPDATE dbo.tbl_screenpopupInfo
-    SET Disposition = @Disposition, UpdatedAt = SYSUTCDATETIME()
+    SET Disposition    = @Disposition,
+        DispositionSub = @DispositionSub,
+        UpdatedAt      = SYSUTCDATETIME()
     WHERE Id = @Id;
 
-    SELECT Id, Disposition, UpdatedAt
+    SELECT Id, Disposition, DispositionSub, UpdatedAt
     FROM dbo.tbl_screenpopupInfo
     WHERE Id = @Id;
 END;
