@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { screenPopupDbConfig, testScreenPopupDbConnection } from "@/lib/server/screenPopupRepository";
+import { testScreenPopupDbConnection } from "@/lib/server/screenPopupRepository";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,13 +20,13 @@ export async function GET() {
         ok: false,
         error: message,
         sqlConfig: {
-          server: screenPopupDbConfig.server,
-          port: screenPopupDbConfig.port,
-          database: screenPopupDbConfig.database,
-          user: screenPopupDbConfig.user,
-          passwordLength: screenPopupDbConfig.password?.length,
-          encrypt: screenPopupDbConfig.options?.encrypt,
-          trustServerCertificate: screenPopupDbConfig.options?.trustServerCertificate
+          server: process.env.DB_SERVER,
+          port: process.env.DB_PORT ?? "1433",
+          database: process.env.DB_DATABASE,
+          user: process.env.DB_USER,
+          passwordLength: process.env.DB_PASSWORD?.length,
+          encrypt: false,
+          trustServerCertificate: true
         }
       },
       { status: 500 }

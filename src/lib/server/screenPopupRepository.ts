@@ -1,5 +1,6 @@
 import sql from "mssql";
 import type { ScreenPopupCallInfo, ScreenPopupCustomerInfo, ScreenPopupRecord } from "@/types";
+import { getPool } from "./dbPool";
 
 interface DbRow {
   Id: number;
@@ -31,27 +32,6 @@ interface DispositionRow {
   UpdatedAt: Date | null;
 }
 
-let poolPromise: Promise<sql.ConnectionPool> | undefined;
-
-export const screenPopupDbConfig = {
-  server: "45.122.120.92",
-  database: "Cisco",
-  user: "sa",
-  password: "Ind!a#$321",
-  port: 1433,
-  options: {
-    encrypt: false,
-    trustServerCertificate: true
-  }
-} satisfies sql.config;
-
-function getPool() {
-  if (!poolPromise) {
-    poolPromise = sql.connect(screenPopupDbConfig);
-  }
-
-  return poolPromise;
-}
 
 export async function saveScreenPopupInfo(
   callInfo: ScreenPopupCallInfo,

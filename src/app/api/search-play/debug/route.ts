@@ -1,20 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getAPIConfigs } from "@/lib/server/apiConfigRepository";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-function getWebexHeaders(): HeadersInit {
-  const token = process.env.WEBEX_BEARER_TOKEN;
-  if (!token) throw new Error("WEBEX_BEARER_TOKEN environment variable is required");
-  return {
-    Authorization: `Bearer ${token}`,
-    Accept: "application/json;charset=UTF-8"
-  };
-}
-
-function getBaseUrl(): string {
-  return process.env.WEBEX_API_BASE_URL ?? "https://webexapis.com/v1";
-}
 
 /**
  * Debug endpoint — returns raw Webex API responses for a single recording.
@@ -32,8 +20,12 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const baseUrl = getBaseUrl();
-  const headers = getWebexHeaders();
+  const config = await getAPIConfigs(["WEBEX_BEARER_TOKEN", "WEBEX_API_BASE_URL"]);
+  const baseUrl = config.WEBEX_API_BASE_URL;
+  const headers: HeadersInit = {
+    Authorization: `Bearer ${config.WEBEX_BEARER_TOKEN}`,
+    Accept: "application/json;charset=UTF-8"
+  };
 
   const [metadataRes, detailRes] = await Promise.allSettled([
     fetch(`${baseUrl}/convergedRecordings/${id}/metadata`, { headers, cache: "no-store" }),

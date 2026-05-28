@@ -5,6 +5,7 @@ import {
   saveDisposition,
   saveScreenPopupInfo
 } from "@/lib/server/screenPopupRepository";
+import { getAPIConfigs } from "@/lib/server/apiConfigRepository";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -142,11 +143,8 @@ function readCallInfo(searchParams: URLSearchParams): ScreenPopupCallInfo {
 }
 
 async function fetchSalesforceContact(ani: string): Promise<SalesforceContactResponse> {
-  const Salestoken = process.env.SALESFORCE_BEARER_TOKEN;
-
-  if (!Salestoken) {
-    throw new Error("SALESFORCE_BEARER_TOKEN environment variable is required");
-  }
+  const config = await getAPIConfigs(["SALESFORCE_BEARER_TOKEN"]);
+  const Salestoken = config.SALESFORCE_BEARER_TOKEN;
 
   const soql = `SELECT Email,name,id,phone,MailingCity,MailingCountry from contact where phone ='${escapeSoql(
     ani
