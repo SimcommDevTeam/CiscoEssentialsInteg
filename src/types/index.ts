@@ -1,3 +1,5 @@
+export type { WebexUser } from "./webex";
+
 export interface IncomingCall {
   ani: string;
   dnis: string;

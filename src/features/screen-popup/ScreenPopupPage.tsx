@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Database, PhoneCall, Radio, UserRound } from "lucide-react";
 import clsx from "clsx";
 import { EmptyState, LoadingState } from "@/components/ui/StateViews";
-import type { ScreenPopupCallInfo, ScreenPopupCustomerInfo, ScreenPopupRecord } from "@/types";
+import type { ScreenPopupCallInfo, ScreenPopupCustomerInfo, ScreenPopupRecord, WebexUser } from "@/types";
 
 interface ScreenPopupApiResponse {
   mode: "created-from-url" | "active-from-db";
@@ -45,6 +45,9 @@ export function ScreenPopupPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [endedPage, setEndedPage] = useState(1);
+
+  const [webexUser, setWebexUser] = useState<WebexUser | null>(null);
+  const [webexUserError, setWebexUserError] = useState<string | null>(null);
 
   const [dispositionCategory, setDispositionCategory] = useState("");
   const [dispositionSub, setDispositionSub] = useState("");
@@ -90,6 +93,48 @@ export function ScreenPopupPage() {
 
     loadScreenPopupInfo();
     return () => controller.abort();
+  }, []);
+
+  // Webex Embedded App SDK — get the agent user identity
+  useEffect(() => {
+    let mounted = true;
+    let timerId: ReturnType<typeof setTimeout> | null = null;
+
+    function tryInit() {
+      if (!mounted) return;
+      if (typeof window === "undefined" || !window.Webex) {
+        // Script not loaded yet — retry
+        timerId = setTimeout(tryInit, 300);
+        return;
+      }
+      try {
+        const app = new window.Webex.Application();
+        app.onReady()
+          .then(() => app.context.getUser())
+          .then((user) => {
+            if (mounted) {
+              console.log("Webex getUser()", user);
+              setWebexUser(user);
+            }
+          })
+          .catch((err: number) => {
+            if (mounted) {
+              const code = window.Webex?.Application?.ErrorCodes?.[err] ?? String(err);
+              console.warn("Webex getUser() failed:", code);
+              setWebexUserError(code);
+            }
+          });
+      } catch {
+        // Application() constructor threw — SDK not fully ready, retry
+        timerId = setTimeout(tryInit, 300);
+      }
+    }
+
+    tryInit();
+    return () => {
+      mounted = false;
+      if (timerId !== null) clearTimeout(timerId);
+    };
   }, []);
 
   async function handleSaveDisposition() {
@@ -188,6 +233,32 @@ export function ScreenPopupPage() {
 
   return (
     <section className="space-y-4">
+
+      {/* ── Webex agent identity ──────────────────────────────────── */}
+      <div className="flex items-center gap-3 rounded-lg border border-webex-line bg-white px-4 py-2.5 shadow-webex">
+        <div className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-webex-blue-light">
+          <UserRound className="h-4 w-4 text-webex-blue" />
+        </div>
+        <div className="flex flex-col">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-webex-muted">
+            Webex Agent
+          </span>
+          {webexUser ? (
+            <span className="text-sm font-semibold text-webex-navy">
+              {webexUser.displayName}
+              <span className="ml-2 font-mono text-[11px] font-normal text-webex-muted">
+                {webexUser.id}
+              </span>
+            </span>
+          ) : webexUserError ? (
+            <span className="text-xs text-amber-600">
+              Not running inside Webex client — user context unavailable ({webexUserError})
+            </span>
+          ) : (
+            <span className="text-xs text-webex-muted">Initialising Webex SDK…</span>
+          )}
+        </div>
+      </div>
 
       {/* ── Info cards ────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 gap-4">
