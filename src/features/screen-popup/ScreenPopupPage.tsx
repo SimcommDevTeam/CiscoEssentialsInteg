@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Database, PhoneCall, Radio, UserRound } from "lucide-react";
 import clsx from "clsx";
 import { EmptyState, LoadingState } from "@/components/ui/StateViews";
@@ -23,7 +23,13 @@ const DISPOSITION_TREE: Record<string, string[]> = {
   "Informational": ["General Inquiry", "Status Update", "Account Inquiry"],
 };
 
+// Keys that identify a call-originated URL (used to detect which load mode we're in)
+const CALL_QUERY_KEYS: Array<keyof ScreenPopupCallInfo> = [
+  "ANI", "DNIS", "InteractionID", "AgentID", "AgentName", "QueueID", "QueueName", "TenantID"
+];
+
 const callFields: Array<{ key: keyof ScreenPopupCallInfo; label: string }> = [
+  { key: "InteractionID", label: "Interaction ID" },
   { key: "ANI", label: "ANI" },
   { key: "DNIS", label: "DNIS" },
   { key: "AgentName", label: "Agent Name" },
@@ -47,12 +53,14 @@ export function ScreenPopupPage() {
   const [endedPage, setEndedPage] = useState(1);
 
   const [webexUser, setWebexUser] = useState<WebexUser | null>(null);
-  const [webexUserError, setWebexUserError] = useState<string | null>(null);
+  // Tracks whether we've already done the agentId-filtered re-fetch for the no-query path
+  const webexRefetchDone = useRef(false);
 
   const [dispositionCategory, setDispositionCategory] = useState("");
   const [dispositionSub, setDispositionSub] = useState("");
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [saveError, setSaveError] = useState("");
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
 
   const endedRecords = data?.ended ?? [];
   const endedPageCount = Math.max(1, Math.ceil(endedRecords.length / endedPageSize));
@@ -61,39 +69,52 @@ export function ScreenPopupPage() {
     endedPage * endedPageSize
   );
 
+  const loadScreenPopupInfo = useCallback(async (agentId?: string | null, signal?: AbortSignal) => {
+    setIsLoading(true);
+    setError("");
+    try {
+      const hasCallQuery = CALL_QUERY_KEYS.some(k => new URLSearchParams(window.location.search).has(k));
+      let fetchUrl = `/api/screen-popup${window.location.search}`;
+      // For no-query path, append agentId so the API can filter by agent
+      if (!hasCallQuery && agentId) {
+        fetchUrl += `?agentId=${encodeURIComponent(agentId)}`;
+      }
+      const response = await fetch(fetchUrl, { signal, cache: "no-store" });
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Unable to load screen popup info");
+      }
+      setData(payload);
+      setEndedPage(1);
+      setDispositionCategory(payload.current?.disposition ?? "");
+      setDispositionSub(payload.current?.dispositionSub ?? "");
+      setSaveStatus("idle");
+    } catch (loadError) {
+      if (signal?.aborted) return;
+      setError(
+        loadError instanceof Error ? loadError.message : "Unable to load screen popup info"
+      );
+    } finally {
+      if (!signal?.aborted) setIsLoading(false);
+    }
+  }, []);
+
+  // Initial fetch on mount (agentId unknown yet for no-query path)
   useEffect(() => {
     const controller = new AbortController();
-
-    async function loadScreenPopupInfo() {
-      setIsLoading(true);
-      setError("");
-      try {
-        const response = await fetch(`/api/screen-popup${window.location.search}`, {
-          signal: controller.signal,
-          cache: "no-store"
-        });
-        const payload = await response.json();
-        if (!response.ok) {
-          throw new Error(payload.error ?? "Unable to load screen popup info");
-        }
-        setData(payload);
-        setEndedPage(1);
-        setDispositionCategory(payload.current?.disposition ?? "");
-        setDispositionSub(payload.current?.dispositionSub ?? "");
-        setSaveStatus("idle");
-      } catch (loadError) {
-        if (controller.signal.aborted) return;
-        setError(
-          loadError instanceof Error ? loadError.message : "Unable to load screen popup info"
-        );
-      } finally {
-        if (!controller.signal.aborted) setIsLoading(false);
-      }
-    }
-
-    loadScreenPopupInfo();
+    loadScreenPopupInfo(null, controller.signal);
     return () => controller.abort();
-  }, []);
+  }, [loadScreenPopupInfo]);
+
+  // Re-fetch filtered by agentId once Webex SDK resolves (no-query-params path only)
+  useEffect(() => {
+    const hasCallQuery = CALL_QUERY_KEYS.some(k => new URLSearchParams(window.location.search).has(k));
+    if (hasCallQuery) return; // agentId already in URL — handled by initial fetch
+    if (!webexUser) return; // SDK not ready yet
+    if (webexRefetchDone.current) return; // only do once
+    webexRefetchDone.current = true;
+    loadScreenPopupInfo(webexUser.id);
+  }, [webexUser, loadScreenPopupInfo]);
 
   // Webex Embedded App SDK — get the agent user identity
   useEffect(() => {
@@ -103,7 +124,6 @@ export function ScreenPopupPage() {
     function tryInit() {
       if (!mounted) return;
       if (typeof window === "undefined" || !window.Webex) {
-        // Script not loaded yet — retry
         timerId = setTimeout(tryInit, 300);
         return;
       }
@@ -111,7 +131,7 @@ export function ScreenPopupPage() {
         const app = new window.Webex.Application();
         app.onReady()
           .then(() => app.context.getUser())
-          .then((user) => {
+          .then((user: WebexUser) => {
             if (mounted) {
               console.log("Webex getUser()", user);
               setWebexUser(user);
@@ -121,11 +141,9 @@ export function ScreenPopupPage() {
             if (mounted) {
               const code = window.Webex?.Application?.ErrorCodes?.[err] ?? String(err);
               console.warn("Webex getUser() failed:", code);
-              setWebexUserError(code);
             }
           });
       } catch {
-        // Application() constructor threw — SDK not fully ready, retry
         timerId = setTimeout(tryInit, 300);
       }
     }
@@ -152,6 +170,7 @@ export function ScreenPopupPage() {
         throw new Error(payload.error ?? "Failed to save disposition");
       }
       setSaveStatus("saved");
+      setShowCloseConfirm(true);
     } catch (err) {
       setSaveStatus("error");
       setSaveError(err instanceof Error ? err.message : "Failed to save disposition");
@@ -193,7 +212,7 @@ export function ScreenPopupPage() {
             <option key={cat} value={cat}>{cat}</option>
           ))}
         </select>
-        {/* Level 2 — sub-disposition, appears once category is chosen */}
+        {/* Level 2 — sub-disposition */}
         {dispositionCategory && (
           <select
             value={dispositionSub}
@@ -233,32 +252,6 @@ export function ScreenPopupPage() {
 
   return (
     <section className="space-y-4">
-
-      {/* ── Webex agent identity ──────────────────────────────────── */}
-      <div className="flex items-center gap-3 rounded-lg border border-webex-line bg-white px-4 py-2.5 shadow-webex">
-        <div className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-webex-blue-light">
-          <UserRound className="h-4 w-4 text-webex-blue" />
-        </div>
-        <div className="flex flex-col">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-webex-muted">
-            Webex Agent
-          </span>
-          {webexUser ? (
-            <span className="text-sm font-semibold text-webex-navy">
-              {webexUser.displayName}
-              <span className="ml-2 font-mono text-[11px] font-normal text-webex-muted">
-                {webexUser.id}
-              </span>
-            </span>
-          ) : webexUserError ? (
-            <span className="text-xs text-amber-600">
-              Not running inside Webex client — user context unavailable ({webexUserError})
-            </span>
-          ) : (
-            <span className="text-xs text-webex-muted">Initialising Webex SDK…</span>
-          )}
-        </div>
-      </div>
 
       {/* ── Info cards ────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 gap-4">
@@ -422,6 +415,39 @@ export function ScreenPopupPage() {
           </div>
         )}
       </div>
+
+      {/* ── Close confirmation modal ──────────────────────────────── */}
+      {showCloseConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-webex-navy/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm overflow-hidden rounded-lg bg-white shadow-webex-lg">
+            <div className="flex items-center gap-3 bg-webex-blue px-5 py-4">
+              <CheckCircle2 className="h-5 w-5 text-white" />
+              <h3 className="text-base font-bold text-white">Disposition Saved</h3>
+            </div>
+            <div className="space-y-4 p-5">
+              <p className="text-sm leading-relaxed text-webex-muted">
+                Disposition has been saved successfully. Would you like to close this tab?
+              </p>
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCloseConfirm(false)}
+                  className="rounded-md border border-webex-line px-4 py-2 text-sm font-semibold text-webex-muted transition hover:border-webex-blue hover:text-webex-blue"
+                >
+                  Stay
+                </button>
+                <button
+                  type="button"
+                  onClick={() => window.close()}
+                  className="rounded-md bg-webex-blue px-4 py-2 text-sm font-bold text-white transition hover:bg-webex-blue-dark"
+                >
+                  Close Tab
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

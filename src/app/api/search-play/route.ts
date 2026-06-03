@@ -64,27 +64,32 @@ export async function GET(request: NextRequest) {
     const from = searchParams.get("from") ?? sevenDaysAgo.toISOString();
     const to = searchParams.get("to") ?? now.toISOString();
 
-    // Fetch recordings list (API a)
-    const listUrl = new URL(`${baseUrl}/convergedRecordings`);
-    listUrl.searchParams.set("max", "100");
-    listUrl.searchParams.set("from", from);
-    listUrl.searchParams.set("to", to);
+    // Fetch available and deleted recordings in parallel
+    const makeListUrl = (status: string) => {
+      const url = new URL(`${baseUrl}/convergedRecordings`);
+      url.searchParams.set("status", status);
+      url.searchParams.set("max", "100");
+      url.searchParams.set("from", from);
+      url.searchParams.set("to", to);
+      return url.toString();
+    };
 
-    const listResponse = await fetch(listUrl.toString(), {
-      headers,
-      cache: "no-store"
-    });
+    const [availableRes, deletedRes] = await Promise.all([
+      fetch(makeListUrl("available"), { headers, cache: "no-store" }),
+      fetch(makeListUrl("deleted"), { headers, cache: "no-store" })
+    ]);
 
-    if (!listResponse.ok) {
-      const errorText = await listResponse.text();
+    if (!availableRes.ok) {
+      const errorText = await availableRes.text();
       return NextResponse.json(
-        { error: `Webex recordings list failed: ${listResponse.status} ${errorText}` },
-        { status: listResponse.status }
+        { error: `Webex recordings list failed: ${availableRes.status} ${errorText}` },
+        { status: availableRes.status }
       );
     }
 
-    const listData: WebexRecordingListResponse = await listResponse.json();
-    const items = listData.items ?? [];
+    const availableData: WebexRecordingListResponse = await availableRes.json();
+    const deletedData: WebexRecordingListResponse = deletedRes.ok ? await deletedRes.json() : { items: [] };
+    const items = [...(availableData.items ?? []), ...(deletedData.items ?? [])];
 
     // For each recording fetch metadata (API b) and detail/download link (API c) in parallel
     const recordings = await Promise.all(

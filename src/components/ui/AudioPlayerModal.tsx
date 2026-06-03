@@ -39,11 +39,10 @@ export function AudioPlayerModal({ recording, onClose }: AudioPlayerModalProps) 
 
         <div className="space-y-4 p-5">
           {/* Metadata */}
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             <Metric label="ANI" value={recording.ani} />
             <Metric label="DNIS" value={recording.dnis} />
             <Metric label="Duration" value={recording.duration} />
-            <Metric label="Type" value={recording.callType} />
           </div>
 
           {/* Audio player */}

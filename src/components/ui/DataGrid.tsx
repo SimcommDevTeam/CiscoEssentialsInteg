@@ -11,6 +11,8 @@ interface DataGridProps<T> {
   rows: T[];
   searchTerm: string;
   pageSize?: number;
+  defaultSortKey?: string;
+  defaultSortDirection?: SortDirection;
 }
 
 type SortDirection = "asc" | "desc";
@@ -19,10 +21,12 @@ export function DataGrid<T extends { id?: string }>({
   columns,
   rows,
   searchTerm,
-  pageSize = 5
+  pageSize = 5,
+  defaultSortKey,
+  defaultSortDirection = "asc"
 }: DataGridProps<T>) {
-  const [sortKey, setSortKey] = useState<string>(String(columns[0]?.key ?? ""));
-  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [sortKey, setSortKey] = useState<string>(defaultSortKey ?? String(columns[0]?.key ?? ""));
+  const [sortDirection, setSortDirection] = useState<SortDirection>(defaultSortDirection);
   const [page, setPage] = useState(1);
 
   const filteredRows = useMemo(() => {

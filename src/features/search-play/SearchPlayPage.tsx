@@ -9,6 +9,11 @@ import { LoadingState } from "@/components/ui/StateViews";
 import { downloadRecording } from "@/lib/audio";
 import type { CallRecording, DataGridColumn } from "@/types";
 
+function toTitleCase(str: string): string {
+  if (!str) return str;
+  return str.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 function toDatetimeLocal(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
   return (
@@ -143,7 +148,7 @@ export function SearchPlayPage() {
         sortable: true,
         render: (row) => (
           <span className="inline-flex items-center rounded-md bg-webex-blue-light px-2.5 py-1 text-xs font-semibold text-webex-blue">
-            {row.callType}
+            {toTitleCase(row.callType)}
           </span>
         )
       },
@@ -152,26 +157,30 @@ export function SearchPlayPage() {
         header: "Actions",
         render: (row) => (
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setSelectedRecording(row)}
-              className="inline-flex h-8 items-center gap-1.5 rounded-md bg-webex-blue px-3 text-xs font-semibold text-white transition hover:bg-webex-blue-dark"
-              aria-label={`Play ${row.id}`}
-              title="Play"
-            >
-              <Play className="h-3.5 w-3.5" />
-              Play
-            </button>
-            <button
-              type="button"
-              onClick={() => downloadRecording(row.recordingUrl, row.recordingFileName)}
-              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-webex-line px-3 text-xs font-semibold text-webex-muted transition hover:border-webex-blue hover:text-webex-blue"
-              aria-label={`Download ${row.id}`}
-              title="Download"
-            >
-              <Download className="h-3.5 w-3.5" />
-              Download
-            </button>
+            {row.callType.toLowerCase() !== "deleted" && (
+              <button
+                type="button"
+                onClick={() => setSelectedRecording(row)}
+                className="inline-flex h-8 items-center gap-1.5 rounded-md bg-webex-blue px-3 text-xs font-semibold text-white transition hover:bg-webex-blue-dark"
+                aria-label={`Play ${row.id}`}
+                title="Play"
+              >
+                <Play className="h-3.5 w-3.5" />
+                Play
+              </button>
+            )}
+            {row.callType.toLowerCase() !== "deleted" && (
+              <button
+                type="button"
+                onClick={() => downloadRecording(row.recordingUrl, row.recordingFileName)}
+                className="inline-flex h-8 items-center gap-1.5 rounded-md border border-webex-line px-3 text-xs font-semibold text-webex-muted transition hover:border-webex-blue hover:text-webex-blue"
+                aria-label={`Download ${row.id}`}
+                title="Download"
+              >
+                <Download className="h-3.5 w-3.5" />
+                Download
+              </button>
+            )}
           </div>
         )
       }
@@ -314,7 +323,7 @@ export function SearchPlayPage() {
       {loading ? (
         <LoadingState label="Fetching recordings…" />
       ) : (
-        <DataGrid columns={columns} rows={filteredRecordings} searchTerm="" />
+        <DataGrid columns={columns} rows={filteredRecordings} searchTerm="" defaultSortKey="callStartDate" defaultSortDirection="desc" />
       )}
 
       <AudioPlayerModal recording={selectedRecording} onClose={() => setSelectedRecording(null)} />

@@ -64,11 +64,12 @@ export async function saveScreenPopupInfo(
   return mapRow(result.recordset[0]);
 }
 
-export async function getScreenPopupInfoByStatus(status: "active" | "ended") {
+export async function getScreenPopupInfoByStatus(status: "active" | "ended", agentId?: string | null) {
   const pool = await getPool();
   const request = pool.request();
 
   request.input("Status", sql.NVarChar(20), status);
+  request.input("AgentId", sql.NVarChar(100), agentId ?? null);
   const result = await request.execute<DbRow>("dbo.usp_GetScreenPopupInfoByStatus");
 
   return result.recordset.map(mapRow);

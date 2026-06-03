@@ -38,10 +38,18 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const hasCallQuery = queryKeys.some((key) => searchParams.has(key));
-    const ended = await getScreenPopupInfoByStatus("ended");
+
+    // With call query params: agentId comes from the URL's AgentID field.
+    // Without call query params: agentId comes from the ?agentId= param passed by the frontend
+    // after the Webex SDK resolves the logged-in user.
+    const agentId = hasCallQuery
+      ? (searchParams.get("AgentID") || null)
+      : (searchParams.get("agentId") || null);
+
+    const ended = await getScreenPopupInfoByStatus("ended", agentId);
 
     if (!hasCallQuery) {
-      const active = await getScreenPopupInfoByStatus("active");
+      const active = await getScreenPopupInfoByStatus("active", agentId);
 
       return NextResponse.json({
         mode: "active-from-db",
