@@ -277,7 +277,7 @@ export function ScreenPopupPage() {
           <>
             <InfoCard
               title="Call Info"
-              subtitle={data?.current?.callInfo.InteractionID || undefined}
+              subtitle={"Call ID: " + (data?.current?.callInfo.InteractionID || undefined)}
               icon={<PhoneCall className="h-4 w-4" />}
               columns={3}
               rows={callFields.map((f) => ({
@@ -460,14 +460,14 @@ function InfoCard({
 }) {
   return (
     <article className="overflow-hidden rounded-lg border border-webex-line bg-white shadow-webex">
-      <div className="flex items-center gap-2.5 border-b border-webex-line bg-webex-blue-light px-4 py-3">
+      <div className="flex items-center gap-2.5 border-b border-webex-line bg-webex-blue-light px-3 py-2">
         <span className="text-webex-blue">{icon}</span>
-        <h3 className="text-sm font-bold text-webex-navy">
+        <h4 className="text-sm font-bold text-webex-navy">
           {title}
           {subtitle && (
             <span className="ml-1.5 text-xs font-normal text-webex-muted">({subtitle})</span>
           )}
-        </h3>
+        </h4>
       </div>
       <dl className={clsx(
         "grid gap-2 p-4",
@@ -477,10 +477,10 @@ function InfoCard({
       )}>
         {rows.map((row) => (
           <div key={row.label} className="rounded-md border border-webex-line bg-webex-canvas px-3 py-2.5">
-            <dt className="text-[9px] font-bold uppercase tracking-wider text-webex-muted">
+            <dt className="text-[1px] font-bold uppercase tracking-wider text-webex-muted">
               {row.label}
             </dt>
-            <dd className="mt-1 break-words text-xs font-semibold text-webex-ink">{row.value}</dd>
+            <dd className="mt-1 break-words text-[1px] font-semibold text-webex-ink">{row.value}</dd>
           </div>
         ))}
       </dl>
