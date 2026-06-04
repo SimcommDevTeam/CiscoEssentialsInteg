@@ -23,16 +23,14 @@ const DISPOSITION_TREE: Record<string, string[]> = {
   "Informational": ["General Inquiry", "Status Update", "Account Inquiry"],
 };
 
-// Keys that identify a call-originated URL (used to detect which load mode we're in)
 const CALL_QUERY_KEYS: Array<keyof ScreenPopupCallInfo> = [
   "ANI", "DNIS", "InteractionID", "AgentID", "AgentName", "QueueID", "QueueName", "TenantID"
 ];
 
+// InteractionID is shown in the card header, not repeated as a field
 const callFields: Array<{ key: keyof ScreenPopupCallInfo; label: string }> = [
-  { key: "InteractionID", label: "Interaction ID" },
   { key: "ANI", label: "ANI" },
   { key: "DNIS", label: "DNIS" },
-  { key: "AgentName", label: "Agent Name" },
   { key: "QueueName", label: "Queue Name" }
 ];
 
@@ -53,14 +51,14 @@ export function ScreenPopupPage() {
   const [endedPage, setEndedPage] = useState(1);
 
   const [webexUser, setWebexUser] = useState<WebexUser | null>(null);
-  // Tracks whether we've already done the agentId-filtered re-fetch for the no-query path
   const webexRefetchDone = useRef(false);
+  // Tracks the latest agentId so the silent interval always uses the current value
+  const agentIdRef = useRef<string | null>(null);
 
   const [dispositionCategory, setDispositionCategory] = useState("");
   const [dispositionSub, setDispositionSub] = useState("");
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [saveError, setSaveError] = useState("");
-  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
 
   const endedRecords = data?.ended ?? [];
   const endedPageCount = Math.max(1, Math.ceil(endedRecords.length / endedPageSize));
@@ -69,13 +67,13 @@ export function ScreenPopupPage() {
     endedPage * endedPageSize
   );
 
-  const loadScreenPopupInfo = useCallback(async (agentId?: string | null, signal?: AbortSignal) => {
-    setIsLoading(true);
-    setError("");
+  // silent=true → update data in background without affecting loading state or user-controlled form state
+  const loadScreenPopupInfo = useCallback(async (agentId?: string | null, signal?: AbortSignal, silent = false) => {
+    if (!silent) setIsLoading(true);
+    if (!silent) setError("");
     try {
       const hasCallQuery = CALL_QUERY_KEYS.some(k => new URLSearchParams(window.location.search).has(k));
       let fetchUrl = `/api/screen-popup${window.location.search}`;
-      // For no-query path, append agentId so the API can filter by agent
       if (!hasCallQuery && agentId) {
         fetchUrl += `?agentId=${encodeURIComponent(agentId)}`;
       }
@@ -85,36 +83,50 @@ export function ScreenPopupPage() {
         throw new Error(payload.error ?? "Unable to load screen popup info");
       }
       setData(payload);
-      setEndedPage(1);
-      setDispositionCategory(payload.current?.disposition ?? "");
-      setDispositionSub(payload.current?.dispositionSub ?? "");
-      setSaveStatus("idle");
+      // Only reset user-controlled state on explicit (non-silent) loads
+      if (!silent) {
+        setEndedPage(1);
+        setDispositionCategory(payload.current?.disposition ?? "");
+        setDispositionSub(payload.current?.dispositionSub ?? "");
+        setSaveStatus("idle");
+      }
     } catch (loadError) {
       if (signal?.aborted) return;
-      setError(
-        loadError instanceof Error ? loadError.message : "Unable to load screen popup info"
-      );
+      if (!silent) {
+        setError(loadError instanceof Error ? loadError.message : "Unable to load screen popup info");
+      }
     } finally {
-      if (!signal?.aborted) setIsLoading(false);
+      if (!signal?.aborted && !silent) setIsLoading(false);
     }
   }, []);
 
-  // Initial fetch on mount (agentId unknown yet for no-query path)
+  // Initial fetch on mount
   useEffect(() => {
     const controller = new AbortController();
     loadScreenPopupInfo(null, controller.signal);
     return () => controller.abort();
   }, [loadScreenPopupInfo]);
 
-  // Re-fetch filtered by agentId once Webex SDK resolves (no-query-params path only)
+  // Re-fetch with agentId once Webex SDK resolves (no-query path only, runs once)
   useEffect(() => {
     const hasCallQuery = CALL_QUERY_KEYS.some(k => new URLSearchParams(window.location.search).has(k));
-    if (hasCallQuery) return; // agentId already in URL — handled by initial fetch
-    if (!webexUser) return; // SDK not ready yet
-    if (webexRefetchDone.current) return; // only do once
+    if (hasCallQuery) return;
+    if (!webexUser) return;
+    if (webexRefetchDone.current) return;
     webexRefetchDone.current = true;
+    agentIdRef.current = webexUser.id;
     loadScreenPopupInfo(webexUser.id);
   }, [webexUser, loadScreenPopupInfo]);
+
+  // Silent background refresh every 10 s (no-query path only)
+  useEffect(() => {
+    const hasCallQuery = CALL_QUERY_KEYS.some(k => new URLSearchParams(window.location.search).has(k));
+    if (hasCallQuery) return;
+    const id = setInterval(() => {
+      loadScreenPopupInfo(agentIdRef.current, undefined, true);
+    }, 10_000);
+    return () => clearInterval(id);
+  }, [loadScreenPopupInfo]);
 
   // Webex Embedded App SDK — get the agent user identity
   useEffect(() => {
@@ -170,7 +182,15 @@ export function ScreenPopupPage() {
         throw new Error(payload.error ?? "Failed to save disposition");
       }
       setSaveStatus("saved");
-      setShowCloseConfirm(true);
+      const hasCallQuery = CALL_QUERY_KEYS.some(k => new URLSearchParams(window.location.search).has(k));
+      if (hasCallQuery && window.confirm("Disposition saved successfully. Close this tab?")) {
+        window.open("", "_self", "");
+        window.close();
+        // Fallback: if window.close() was blocked, navigate away
+        setTimeout(() => {
+          if (!window.closed) window.location.replace("about:blank");
+        }, 300);
+      }
     } catch (err) {
       setSaveStatus("error");
       setSaveError(err instanceof Error ? err.message : "Failed to save disposition");
@@ -201,23 +221,21 @@ export function ScreenPopupPage() {
         Disposition
       </label>
       <div className="flex flex-col gap-2">
-        {/* Level 1 — category */}
         <select
           value={dispositionCategory}
           onChange={(e) => { setDispositionCategory(e.target.value); setDispositionSub(""); setSaveStatus("idle"); }}
-          className="h-9 w-full rounded-md border border-webex-line bg-webex-canvas px-3 text-sm text-webex-ink transition focus:border-webex-blue focus:bg-white focus:outline-none"
+          className="h-9 w-full rounded-md border border-webex-line bg-webex-canvas px-3 text-xs text-webex-ink transition focus:border-webex-blue focus:bg-white focus:outline-none"
         >
           <option value="">Select category…</option>
           {Object.keys(DISPOSITION_TREE).map((cat) => (
             <option key={cat} value={cat}>{cat}</option>
           ))}
         </select>
-        {/* Level 2 — sub-disposition */}
         {dispositionCategory && (
           <select
             value={dispositionSub}
             onChange={(e) => { setDispositionSub(e.target.value); setSaveStatus("idle"); }}
-            className="h-9 w-full rounded-md border border-webex-line bg-webex-canvas px-3 text-sm text-webex-ink transition focus:border-webex-blue focus:bg-white focus:outline-none"
+            className="h-9 w-full rounded-md border border-webex-line bg-webex-canvas px-3 text-xs text-webex-ink transition focus:border-webex-blue focus:bg-white focus:outline-none"
           >
             <option value="">Select disposition…</option>
             {(DISPOSITION_TREE[dispositionCategory] ?? []).map((sub) => (
@@ -229,7 +247,7 @@ export function ScreenPopupPage() {
           type="button"
           onClick={handleSaveDisposition}
           disabled={!dispositionCategory || !dispositionSub || saveStatus === "saving"}
-          className="h-9 rounded-md bg-webex-blue px-4 text-sm font-bold text-white transition hover:bg-webex-blue-dark disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-9 rounded-md bg-webex-blue px-4 text-xs font-bold text-white transition hover:bg-webex-blue-dark disabled:cursor-not-allowed disabled:opacity-50"
         >
           {saveStatus === "saving" ? "Saving…" : "Save"}
         </button>
@@ -259,7 +277,9 @@ export function ScreenPopupPage() {
           <>
             <InfoCard
               title="Call Info"
+              subtitle={data?.current?.callInfo.InteractionID || undefined}
               icon={<PhoneCall className="h-4 w-4" />}
+              columns={3}
               rows={callFields.map((f) => ({
                 label: f.label,
                 value: String(data?.current?.callInfo[f.key] || "—")
@@ -269,6 +289,7 @@ export function ScreenPopupPage() {
             <InfoCard
               title="Customer Info"
               icon={<UserRound className="h-4 w-4" />}
+              columns={3}
               rows={customerFields.map((f) => ({
                 label: f.label,
                 value: String(data?.current?.customerInfo?.[f.key] || "—")
@@ -416,38 +437,6 @@ export function ScreenPopupPage() {
         )}
       </div>
 
-      {/* ── Close confirmation modal ──────────────────────────────── */}
-      {showCloseConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-webex-navy/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm overflow-hidden rounded-lg bg-white shadow-webex-lg">
-            <div className="flex items-center gap-3 bg-webex-blue px-5 py-4">
-              <CheckCircle2 className="h-5 w-5 text-white" />
-              <h3 className="text-base font-bold text-white">Disposition Saved</h3>
-            </div>
-            <div className="space-y-4 p-5">
-              <p className="text-sm leading-relaxed text-webex-muted">
-                Disposition has been saved successfully. Would you like to close this tab?
-              </p>
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowCloseConfirm(false)}
-                  className="rounded-md border border-webex-line px-4 py-2 text-sm font-semibold text-webex-muted transition hover:border-webex-blue hover:text-webex-blue"
-                >
-                  Stay
-                </button>
-                <button
-                  type="button"
-                  onClick={() => window.close()}
-                  className="rounded-md bg-webex-blue px-4 py-2 text-sm font-bold text-white transition hover:bg-webex-blue-dark"
-                >
-                  Close Tab
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </section>
   );
 }
@@ -456,28 +445,42 @@ export function ScreenPopupPage() {
 
 function InfoCard({
   title,
+  subtitle,
   icon,
   rows,
-  footer
+  footer,
+  columns = 2
 }: {
   title: string;
+  subtitle?: string;
   icon: React.ReactNode;
   rows: Array<{ label: string; value: string }>;
   footer?: React.ReactNode;
+  columns?: 2 | 3 | 4;
 }) {
   return (
     <article className="overflow-hidden rounded-lg border border-webex-line bg-white shadow-webex">
       <div className="flex items-center gap-2.5 border-b border-webex-line bg-webex-blue-light px-4 py-3">
         <span className="text-webex-blue">{icon}</span>
-        <h3 className="text-sm font-bold text-webex-navy">{title}</h3>
+        <h3 className="text-sm font-bold text-webex-navy">
+          {title}
+          {subtitle && (
+            <span className="ml-1.5 text-xs font-normal text-webex-muted">({subtitle})</span>
+          )}
+        </h3>
       </div>
-      <dl className="grid gap-2 p-4 sm:grid-cols-2">
+      <dl className={clsx(
+        "grid gap-2 p-4",
+        columns === 2 && "grid-cols-2",
+        columns === 3 && "grid-cols-3",
+        columns === 4 && "grid-cols-4"
+      )}>
         {rows.map((row) => (
           <div key={row.label} className="rounded-md border border-webex-line bg-webex-canvas px-3 py-2.5">
-            <dt className="text-[10px] font-bold uppercase tracking-wider text-webex-muted">
+            <dt className="text-[9px] font-bold uppercase tracking-wider text-webex-muted">
               {row.label}
             </dt>
-            <dd className="mt-1 break-words text-sm font-semibold text-webex-ink">{row.value}</dd>
+            <dd className="mt-1 break-words text-xs font-semibold text-webex-ink">{row.value}</dd>
           </div>
         ))}
       </dl>
@@ -500,8 +503,8 @@ function EmptyInfoCard({ title, icon }: { title: string; icon: React.ReactNode }
       <div className="flex min-h-32 flex-col items-center justify-center gap-2.5 p-6">
         <Radio className="h-8 w-8 text-webex-line" />
         <div className="text-center">
-          <p className="text-sm font-semibold text-webex-muted">No active call</p>
-          <p className="mt-0.5 text-xs text-webex-muted">Waiting for an incoming call</p>
+          <p className="text-xs font-semibold text-webex-muted">No active call</p>
+          <p className="mt-0.5 text-[10px] text-webex-muted">Waiting for an incoming call</p>
         </div>
       </div>
     </article>
