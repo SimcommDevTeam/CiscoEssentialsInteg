@@ -52,8 +52,8 @@ export function ScreenPopupPage() {
 
   const [webexUser, setWebexUser] = useState<WebexUser | null>(null);
   const webexRefetchDone = useRef(false);
-  // Tracks the latest agentId so the silent interval always uses the current value
   const agentIdRef = useRef<string | null>(null);
+  const notificationShownRef = useRef(false);
 
   const [dispositionCategory, setDispositionCategory] = useState("");
   const [dispositionSub, setDispositionSub] = useState("");
@@ -127,6 +127,37 @@ export function ScreenPopupPage() {
     }, 10_000);
     return () => clearInterval(id);
   }, [loadScreenPopupInfo]);
+
+  // Request notification permission on mount (query-param path only)
+  useEffect(() => {
+    const hasCallQuery = CALL_QUERY_KEYS.some(k => new URLSearchParams(window.location.search).has(k));
+    if (!hasCallQuery) return;
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  // Fire browser notification once when call data first loads with query params
+  useEffect(() => {
+    const hasCallQuery = CALL_QUERY_KEYS.some(k => new URLSearchParams(window.location.search).has(k));
+    if (!hasCallQuery) return;
+    if (notificationShownRef.current) return;
+    if (!data?.current) return;
+    if (!("Notification" in window)) return;
+
+    const customerId = data.current.customerInfo?.Id ?? "N/A";
+
+    const fire = () => {
+      notificationShownRef.current = true;
+      new Notification("Incoming Call", { body: `Customer Id: ${customerId}` });
+    };
+
+    if (Notification.permission === "granted") {
+      fire();
+    } else if (Notification.permission === "default") {
+      Notification.requestPermission().then(p => { if (p === "granted") fire(); });
+    }
+  }, [data]);
 
   // Webex Embedded App SDK — get the agent user identity
   useEffect(() => {
