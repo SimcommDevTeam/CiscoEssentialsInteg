@@ -137,7 +137,7 @@ export function ScreenPopupPage() {
     }
   }, []);
 
-  // Fire browser notification once when call data first loads with query params
+  // Fire notification when browser is minimized (or immediately if already hidden when data loads)
   useEffect(() => {
     const hasCallQuery = CALL_QUERY_KEYS.some(k => new URLSearchParams(window.location.search).has(k));
     if (!hasCallQuery) return;
@@ -148,15 +148,32 @@ export function ScreenPopupPage() {
     const customerId = data.current.customerInfo?.Id ?? "N/A";
 
     const fire = () => {
+      if (notificationShownRef.current) return;
       notificationShownRef.current = true;
       new Notification("Incoming Call", { body: `Customer Id: ${customerId}` });
     };
 
+    const handleVisibilityChange = () => {
+      if (document.hidden) fire();
+    };
+
+    const setup = () => {
+      if (document.hidden) {
+        // Browser already minimized when data loaded — fire right away
+        fire();
+      } else {
+        // Browser is visible — wait for user to minimize
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+      }
+    };
+
     if (Notification.permission === "granted") {
-      fire();
+      setup();
     } else if (Notification.permission === "default") {
-      Notification.requestPermission().then(p => { if (p === "granted") fire(); });
+      Notification.requestPermission().then(p => { if (p === "granted") setup(); });
     }
+
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, [data]);
 
   // Webex Embedded App SDK — get the agent user identity
