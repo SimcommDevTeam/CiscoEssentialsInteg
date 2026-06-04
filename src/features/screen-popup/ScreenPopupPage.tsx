@@ -53,7 +53,7 @@ export function ScreenPopupPage() {
   const [webexUser, setWebexUser] = useState<WebexUser | null>(null);
   const webexRefetchDone = useRef(false);
   const agentIdRef = useRef<string | null>(null);
-  const notificationShownRef = useRef(false);
+  const activeNotificationRef = useRef<Notification | null>(null);
 
   const [dispositionCategory, setDispositionCategory] = useState("");
   const [dispositionSub, setDispositionSub] = useState("");
@@ -141,16 +141,23 @@ export function ScreenPopupPage() {
   useEffect(() => {
     const hasCallQuery = CALL_QUERY_KEYS.some(k => new URLSearchParams(window.location.search).has(k));
     if (!hasCallQuery) return;
-    if (notificationShownRef.current) return;
     if (!data?.current) return;
     if (!("Notification" in window)) return;
 
     const customerId = data.current.customerInfo?.Id ?? "N/A";
+    // Local flag: resets on every new data load so a new call always shows a fresh notification
+    let fired = false;
 
     const fire = () => {
-      if (notificationShownRef.current) return;
-      notificationShownRef.current = true;
-      new Notification("Incoming Call", { body: `Customer Id: ${customerId}` });
+      if (fired) return;
+      fired = true;
+      // Close the previous call's notification before showing the new one
+      activeNotificationRef.current?.close();
+      const n = new Notification("Incoming Call", {
+        body: `Customer Id: ${customerId}`,
+        requireInteraction: true
+      });
+      activeNotificationRef.current = n;
     };
 
     const handleVisibilityChange = () => {
@@ -159,10 +166,8 @@ export function ScreenPopupPage() {
 
     const setup = () => {
       if (document.hidden) {
-        // Browser already minimized when data loaded — fire right away
         fire();
       } else {
-        // Browser is visible — wait for user to minimize
         document.addEventListener("visibilitychange", handleVisibilityChange);
       }
     };
