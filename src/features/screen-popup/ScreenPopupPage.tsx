@@ -144,7 +144,8 @@ export function ScreenPopupPage() {
     if (!data?.current) return;
     if (!("Notification" in window)) return;
 
-    const customerId = data.current.customerInfo?.Id ?? "N/A";
+    const callId = data.current.callInfo.InteractionID || "N/A";
+    const customerName = data.current.customerInfo?.Name || "N/A";
     // Local flag: resets on every new data load so a new call always shows a fresh notification
     let fired = false;
 
@@ -154,7 +155,7 @@ export function ScreenPopupPage() {
       // Close the previous call's notification before showing the new one
       activeNotificationRef.current?.close();
       const n = new Notification("Incoming Call", {
-        body: `Customer Id: ${customerId}`,
+        body: `Call Id: ${callId}, Customer Name: ${customerName}`,
         requireInteraction: true
       });
       activeNotificationRef.current = n;
