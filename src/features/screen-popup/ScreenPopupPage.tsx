@@ -183,13 +183,9 @@ export function ScreenPopupPage() {
 
     const callId = data.current.callInfo.InteractionID || "N/A";
     const customerName = data.current.customerInfo?.Name || "N/A";
-    // Local flag: resets on every new data load so a new call always shows a fresh notification
-    let fired = false;
 
     const fire = () => {
-      if (fired) return;
-      fired = true;
-      // Close the previous call's notification before showing the new one
+      // Close any existing notification then show a fresh one
       activeNotificationRef.current?.close();
       const n = new Notification("Incoming Call", {
         body: `Call Id: ${callId}, Customer Name: ${customerName}`,
