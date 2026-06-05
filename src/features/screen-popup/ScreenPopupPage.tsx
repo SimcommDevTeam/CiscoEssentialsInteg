@@ -110,25 +110,20 @@ export function ScreenPopupPage() {
     let isPrimary = false;
 
     channel.onmessage = (event: MessageEvent) => {
-      if (event.data?.type === "I_AM_OPEN") {
-        // An existing tab is already showing the screen popup — close this new tab
+      if (event.data?.type === "TAKE_OVER" && isPrimary) {
+        // A newer screen popup tab is opening — close this older tab
         window.open("", "_self", "");
         window.close();
         setTimeout(() => {
           if (!window.closed) window.location.replace("about:blank");
         }, 300);
       }
-      if (event.data?.type === "ARE_YOU_OPEN" && isPrimary) {
-        // We are the primary tab — tell the new tab and bring this window to front
-        channel.postMessage({ type: "I_AM_OPEN" });
-        window.focus();
-      }
     };
 
-    // Ask existing tabs if any of them is already showing the screen popup
-    channel.postMessage({ type: "ARE_YOU_OPEN" });
+    // Tell any existing primary tab to close — the new tab is taking over
+    channel.postMessage({ type: "TAKE_OVER" });
 
-    // If no existing tab responds within 150 ms, this tab becomes the primary
+    // After 150 ms (enough for the old tab to close), claim primary for this tab
     const timer = setTimeout(() => { isPrimary = true; }, 150);
 
     return () => {
