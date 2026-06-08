@@ -231,6 +231,14 @@ export function ScreenPopupPage() {
         const user = app.application.states.user;
         if (mounted) {
           console.log("Webex user", user);
+          alert(
+            "Webex User Details:\n\n" +
+            "ID: " + (user?.id ?? "N/A") + "\n" +
+            "Display Name: " + (user?.displayName ?? "N/A") + "\n" +
+            "Email: " + (user?.email ?? "N/A") + "\n" +
+            "Org ID: " + (user?.orgId ?? "N/A") + "\n\n" +
+            "Full object:\n" + JSON.stringify(user, null, 2)
+          );
           setWebexUser(user);
         }
       } catch {
