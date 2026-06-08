@@ -223,21 +223,31 @@ export function ScreenPopupPage() {
         return;
       }
       try {
-        const sidebarApp = new webex.Application();
-        await sidebarApp.onReady();
-        const sidebar = await sidebarApp.getSidebar();
-        console.log("Webex sidebar", sidebar);
-        setWebexDebugInfo("Sidebar object:\n" + JSON.stringify(sidebar, null, 2));
-        await sidebar.showBadge({ badgeType: "count", count: 100 });
         const app = new window.webex.Application();
         await app.onReady();
+
+        try {
+          const sidebar = await app.getSidebar();
+          console.log("Webex sidebar", sidebar);
+          const sidebarStr = JSON.stringify(sidebar, null, 2);
+          setWebexDebugInfo("Sidebar object:\n" + (sidebarStr === "{}" ? "(no enumerable props — see console)" : sidebarStr));
+          await sidebar.showBadge({ badgeType: "count", count: 100 });
+        } catch (sidebarErr) {
+          const msg = sidebarErr instanceof Error ? sidebarErr.message : String(sidebarErr);
+          console.warn("getSidebar failed:", sidebarErr);
+          setWebexDebugInfo("getSidebar() error:\n" + msg);
+        }
+
         const user = app.application.states.user;
         if (mounted) {
           console.log("Webex user", user);
-          setWebexDebugInfo(JSON.stringify(user, null, 2));
+          setWebexDebugInfo(prev =>
+            (prev ? prev + "\n\n" : "") + "User object:\n" + JSON.stringify(user, null, 2)
+          );
           setWebexUser(user);
         }
-      } catch {
+      } catch (err) {
+        console.warn("Webex init failed:", err);
         timerId = setTimeout(tryInit, 300);
       }
     }

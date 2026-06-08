@@ -24,6 +24,7 @@ interface WebexSidebar {
 
 interface WebexApplicationInstance {
   onReady(): Promise<void>;
+  getSidebar(): Promise<WebexSidebar>;
   application: WebexApplicationInfo;
 }
 
