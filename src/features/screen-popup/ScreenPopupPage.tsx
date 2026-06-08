@@ -231,7 +231,7 @@ export function ScreenPopupPage() {
           //console.log("Webex sidebar", sidebar);
           //const sidebarStr = JSON.stringify(sidebar, null, 2);
           //setWebexDebugInfo("Sidebar object:\n" + (sidebarStr === "{}" ? "(no enumerable props — see console)" : sidebarStr));
-          await sidebar.showBadge({ badgeType: "count", count: 100 });
+          await sidebar.showBadge({ badgeType: "count", count: 1 });
         } catch (sidebarErr) {
           const msg = sidebarErr instanceof Error ? sidebarErr.message : String(sidebarErr);
           console.warn("getSidebar failed:", sidebarErr);
