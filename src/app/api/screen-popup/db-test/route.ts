@@ -20,15 +20,6 @@ export async function GET() {
         ok: false,
         error: message,
         sqlConfig: {
-<<<<<<< HEAD
-          server: process.env.SQL_SERVER,
-          port: process.env.SQL_PORT,
-          database: process.env.SQL_DATABASE,
-          user: process.env.SQL_USER,
-          passwordLength: process.env.SQL_PASSWORD?.length,
-          encrypt: process.env.SQL_ENCRYPT,
-          trustServerCertificate: process.env.SQL_TRUST_SERVER_CERTIFICATE
-=======
           server: process.env.DB_SERVER,
           port: process.env.DB_PORT ?? "1433",
           database: process.env.DB_DATABASE,
@@ -36,7 +27,6 @@ export async function GET() {
           passwordLength: process.env.DB_PASSWORD?.length,
           encrypt: false,
           trustServerCertificate: true
->>>>>>> prod
         }
       },
       { status: 500 }
