@@ -33,6 +33,7 @@ The project uses Next.js server routes for the Screen Popup APIs, so deploy it a
 
 ## Screen Popup Backend
 
+<<<<<<< HEAD
 The Screen Popup page uses API routes for Salesforce lookup and MS SQL persistence. Configure these environment variables before running in production:
 
 ```text
@@ -46,6 +47,11 @@ SQL_PORT=1433
 SQL_ENCRYPT=true
 SQL_TRUST_SERVER_CERTIFICATE=false
 ```
+=======
+The Screen Popup page uses API routes for Salesforce lookup and MS SQL persistence.
+The Salesforce token is configured in `src/app/api/screen-popup/route.ts`.
+The MS SQL connection is configured in `src/lib/server/screenPopupRepository.ts`.
+>>>>>>> prod
 
 Run the schema and stored procedures from `database/screenpopup.sql` against the SQL database before using the page.
 

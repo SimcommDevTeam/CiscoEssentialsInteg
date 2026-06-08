@@ -1,3 +1,5 @@
+export type { WebexUser } from "./webex";
+
 export interface IncomingCall {
   ani: string;
   dnis: string;
@@ -29,6 +31,11 @@ export interface ScreenPopupCustomerInfo {
 export interface ScreenPopupRecord {
   id: number;
   status: "active" | "ended" | string;
+<<<<<<< HEAD
+=======
+  disposition: string | null;
+  dispositionSub: string | null;
+>>>>>>> prod
   createdAt: string;
   updatedAt: string | null;
   callInfo: ScreenPopupCallInfo;
@@ -42,7 +49,7 @@ export interface CallRecording {
   ani: string;
   dnis: string;
   duration: string;
-  callType: "Inbound" | "Outbound" | "Internal";
+  callType: string;
   recordingUrl: string;
   recordingFileName: string;
 }

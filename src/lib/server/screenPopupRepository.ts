@@ -1,5 +1,9 @@
 import sql from "mssql";
 import type { ScreenPopupCallInfo, ScreenPopupCustomerInfo, ScreenPopupRecord } from "@/types";
+<<<<<<< HEAD
+=======
+import { getPool } from "./dbPool";
+>>>>>>> prod
 
 interface DbRow {
   Id: number;
@@ -17,11 +21,17 @@ interface DbRow {
   Phone: string | null;
   MailingCity: string | null;
   MailingCountry: string | null;
+<<<<<<< HEAD
+=======
+  Disposition: string | null;
+  DispositionSub: string | null;
+>>>>>>> prod
   Status: string;
   CreatedAt: Date;
   UpdatedAt: Date | null;
 }
 
+<<<<<<< HEAD
 let poolPromise: Promise<sql.ConnectionPool> | undefined;
 
 function requiredEnv(name: string) {
@@ -51,6 +61,15 @@ function getPool() {
 
   return poolPromise;
 }
+=======
+interface DispositionRow {
+  Id: number;
+  Disposition: string | null;
+  DispositionSub: string | null;
+  UpdatedAt: Date | null;
+}
+
+>>>>>>> prod
 
 export async function saveScreenPopupInfo(
   callInfo: ScreenPopupCallInfo,
@@ -83,11 +102,19 @@ export async function saveScreenPopupInfo(
   return mapRow(result.recordset[0]);
 }
 
+<<<<<<< HEAD
 export async function getScreenPopupInfoByStatus(status: "active" | "ended") {
+=======
+export async function getScreenPopupInfoByStatus(status: "active" | "ended", agentId?: string | null) {
+>>>>>>> prod
   const pool = await getPool();
   const request = pool.request();
 
   request.input("Status", sql.NVarChar(20), status);
+<<<<<<< HEAD
+=======
+  request.input("AgentId", sql.NVarChar(100), agentId ?? null);
+>>>>>>> prod
   const result = await request.execute<DbRow>("dbo.usp_GetScreenPopupInfoByStatus");
 
   return result.recordset.map(mapRow);
@@ -102,10 +129,30 @@ export async function testScreenPopupDbConnection() {
   return result.recordset[0];
 }
 
+<<<<<<< HEAD
+=======
+export async function saveDisposition(id: number, disposition: string, dispositionSub: string) {
+  const pool = await getPool();
+  const request = pool.request();
+
+  request.input("Id", sql.Int, id);
+  request.input("Disposition", sql.NVarChar(100), disposition);
+  request.input("DispositionSub", sql.NVarChar(100), dispositionSub);
+
+  const result = await request.execute<DispositionRow>("dbo.usp_SaveDisposition");
+  return result.recordset[0];
+}
+
+>>>>>>> prod
 function mapRow(row: DbRow): ScreenPopupRecord {
   return {
     id: row.Id,
     status: row.Status,
+<<<<<<< HEAD
+=======
+    disposition: row.Disposition ?? null,
+    dispositionSub: row.DispositionSub ?? null,
+>>>>>>> prod
     createdAt: row.CreatedAt.toISOString(),
     updatedAt: row.UpdatedAt?.toISOString() ?? null,
     callInfo: {

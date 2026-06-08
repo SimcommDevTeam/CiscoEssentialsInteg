@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Headphones, Radio, Search, ShieldCheck } from "lucide-react";
+import { Bell, Headphones, Radio, Search } from "lucide-react";
 import clsx from "clsx";
 
 export type DashboardTab = "screen-popup" | "search-play";
@@ -8,6 +8,7 @@ export type DashboardTab = "screen-popup" | "search-play";
 interface DashboardShellProps {
   activeTab: DashboardTab;
   onTabChange: (tab: DashboardTab) => void;
+  screenPopupOnly?: boolean;
   children: React.ReactNode;
 }
 
@@ -16,68 +17,69 @@ const tabs = [
   { id: "search-play" as const, label: "Search & Play", icon: Search }
 ];
 
-export function DashboardShell({ activeTab, onTabChange, children }: DashboardShellProps) {
+export function DashboardShell({ activeTab, onTabChange, screenPopupOnly = false, children }: DashboardShellProps) {
   return (
     <div className="min-h-screen bg-webex-canvas">
-      <header className="sticky top-0 z-10 border-b border-webex-line bg-white/95 backdrop-blur">
-        <div className="px-4 py-4 sm:px-6 xl:px-8">
-          <div className="mx-auto flex max-w-7xl flex-col gap-4">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex items-center gap-3">
-                <div className="grid h-11 w-11 place-items-center rounded-lg bg-webex-mint text-webex-teal">
-                  <Headphones className="h-6 w-6" />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-webex-teal">
-                    Cisco Webex
-                  </p>
-                  <h1 className="text-xl font-bold text-webex-navy sm:text-2xl">
-                    Calling Integration
-                  </h1>
-                </div>
-              </div>
+      <header className="sticky top-0 z-10 bg-white shadow-webex">
+        {/* Webex brand accent line */}
+        <div className="h-[3px] bg-webex-blue" />
 
-              <div className="flex items-center gap-3">
-                <div className="hidden items-center gap-2 rounded-lg border border-webex-line bg-webex-canvas px-3 py-2 text-sm font-semibold text-webex-navy md:flex">
-                  <ShieldCheck className="h-4 w-4 text-webex-teal" />
-                  Secure mock workspace
-                </div>
-                <button
-                  type="button"
-                  className="grid h-10 w-10 place-items-center rounded-lg border border-webex-line bg-white text-webex-muted transition hover:border-webex-cyan hover:text-webex-blue"
-                  aria-label="Notifications"
-                  title="Notifications"
-                >
-                  <Bell className="h-5 w-5" />
-                </button>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 xl:px-8">
+          {/* Top row: brand + actions */}
+          <div className="flex h-14 items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="grid h-8 w-8 place-items-center rounded-md bg-webex-blue text-white">
+                <Headphones className="h-4 w-4" />
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-sm font-bold text-webex-blue">Cisco Webex</span>
+                <span className="hidden text-webex-line sm:block">|</span>
+                <span className="hidden text-sm font-semibold text-webex-navy sm:block">
+                  Calling Integration
+                </span>
               </div>
             </div>
 
-            <nav className="overflow-x-auto" aria-label="Primary navigation">
-              <div className="inline-flex min-w-full gap-2 rounded-lg border border-webex-line bg-webex-canvas p-1 sm:min-w-0">
-                {tabs.map((tab) => {
-                  const Icon = tab.icon;
-                  const isActive = activeTab === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => onTabChange(tab.id)}
-                      className={clsx(
-                        "flex min-w-40 flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold transition sm:flex-none",
-                        isActive
-                          ? "bg-webex-blue text-white shadow-webex"
-                          : "text-webex-muted hover:bg-white hover:text-webex-navy"
-                      )}
-                    >
-                      <Icon className="h-4 w-4" />
-                      {tab.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </nav>
+            <div className="flex items-center gap-2">
+              <span className="hidden items-center gap-1.5 rounded-md border border-webex-line bg-webex-canvas px-3 py-1.5 text-xs font-semibold text-webex-muted sm:flex">
+                Cisco Webex Workspace
+              </span>
+              <button
+                type="button"
+                className="grid h-8 w-8 place-items-center rounded-md border border-webex-line text-webex-muted transition hover:border-webex-blue hover:text-webex-blue"
+                aria-label="Notifications"
+                title="Notifications"
+              >
+                <Bell className="h-4 w-4" />
+              </button>
+            </div>
           </div>
+
+          {/* Tab navigation — hidden when launched from a call URL */}
+          {!screenPopupOnly && (
+            <nav className="flex gap-1" aria-label="Primary navigation">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => onTabChange(tab.id)}
+                    className={clsx(
+                      "flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition",
+                      isActive
+                        ? "border-b-webex-blue text-webex-blue"
+                        : "border-b-transparent text-webex-muted hover:border-b-webex-line hover:text-webex-navy"
+                    )}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </nav>
+          )}
         </div>
       </header>
 

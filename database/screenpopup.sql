@@ -117,7 +117,12 @@ END;
 GO
 
 CREATE OR ALTER PROCEDURE dbo.usp_GetScreenPopupInfoByStatus
+<<<<<<< HEAD
     @Status NVARCHAR(20)
+=======
+    @Status  NVARCHAR(20),
+    @AgentId NVARCHAR(100) = NULL   -- NULL = return all agents; non-NULL = filter to that agent
+>>>>>>> prod
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -138,11 +143,20 @@ BEGIN
         Phone,
         MailingCity,
         MailingCountry,
+<<<<<<< HEAD
+=======
+        Disposition,
+        DispositionSub,
+>>>>>>> prod
         Status,
         CreatedAt,
         UpdatedAt
     FROM dbo.tbl_screenpopupInfo
     WHERE Status = @Status
+<<<<<<< HEAD
+=======
+      AND (@AgentId IS NULL OR AgentID = @AgentId)
+>>>>>>> prod
     ORDER BY CreatedAt DESC;
 END;
 GO

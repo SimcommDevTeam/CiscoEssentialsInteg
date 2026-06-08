@@ -1,22 +1,27 @@
-import { Inbox, Loader2 } from "lucide-react";
+import { Inbox } from "lucide-react";
 
 export function LoadingState({ label = "Loading data" }: { label?: string }) {
   return (
-    <div className="flex min-h-52 items-center justify-center rounded-lg border border-webex-line bg-white">
-      <div className="flex items-center gap-3 text-sm font-semibold text-webex-muted">
-        <Loader2 className="h-5 w-5 animate-spin text-webex-blue" />
-        {label}
+    <div className="flex min-h-52 flex-col items-center justify-center gap-4 rounded-lg border border-webex-line bg-white shadow-webex">
+      <div className="relative h-10 w-10">
+        <div className="absolute inset-0 rounded-full border-2 border-webex-line" />
+        <div className="absolute inset-0 animate-spin rounded-full border-2 border-transparent border-t-webex-blue" />
       </div>
+      <p className="text-sm font-semibold text-webex-muted">{label}</p>
     </div>
   );
 }
 
 export function EmptyState({ title, description }: { title: string; description: string }) {
   return (
-    <div className="flex min-h-52 flex-col items-center justify-center rounded-lg border border-dashed border-webex-line bg-white p-6 text-center">
-      <Inbox className="h-9 w-9 text-webex-teal" />
-      <h3 className="mt-3 text-base font-bold text-webex-navy">{title}</h3>
-      <p className="mt-1 max-w-md text-sm leading-6 text-webex-muted">{description}</p>
+    <div className="flex min-h-52 flex-col items-center justify-center gap-4 rounded-lg border border-dashed border-webex-line bg-white p-8 text-center shadow-webex">
+      <div className="grid h-12 w-12 place-items-center rounded-lg border border-webex-line bg-webex-blue-light text-webex-blue">
+        <Inbox className="h-6 w-6" />
+      </div>
+      <div>
+        <h3 className="text-sm font-bold text-webex-ink">{title}</h3>
+        <p className="mt-1 max-w-sm text-sm leading-relaxed text-webex-muted">{description}</p>
+      </div>
     </div>
   );
 }
