@@ -5,18 +5,31 @@ export interface WebexUser {
   orgId: string | null;
 }
 
-interface WebexContext {
-  getUser(): Promise<WebexUser>;
+interface WebexApplicationStates {
+  user: WebexUser;
+}
+
+interface WebexApplicationInfo {
+  states: WebexApplicationStates;
+}
+
+interface WebexBadgeOptions {
+  badgeType: "count" | "dot";
+  count?: number;
+}
+
+interface WebexSidebar {
+  showBadge(options: WebexBadgeOptions): Promise<boolean>;
 }
 
 interface WebexApplicationInstance {
   onReady(): Promise<void>;
-  context: WebexContext;
+  getSidebar(): Promise<WebexSidebar>;
+  application: WebexApplicationInfo;
 }
 
 interface WebexApplicationConstructor {
   new (): WebexApplicationInstance;
-  ErrorCodes: Record<number, string>;
 }
 
 interface WebexGlobal {
@@ -25,6 +38,6 @@ interface WebexGlobal {
 
 declare global {
   interface Window {
-    Webex?: WebexGlobal;
+    webex?: WebexGlobal;
   }
 }

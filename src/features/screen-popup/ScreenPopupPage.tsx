@@ -214,28 +214,25 @@ export function ScreenPopupPage() {
     let mounted = true;
     let timerId: ReturnType<typeof setTimeout> | null = null;
 
-    function tryInit() {
+    async function tryInit() {
       if (!mounted) return;
-      if (typeof window === "undefined" || !window.Webex) {
+      if (typeof window === "undefined" || !window.webex) {
         timerId = setTimeout(tryInit, 300);
         return;
       }
       try {
-        const app = new window.Webex.Application();
-        app.onReady()
-          .then(() => app.context.getUser())
-          .then((user: WebexUser) => {
-            if (mounted) {
-              console.log("Webex getUser()", user);
-              setWebexUser(user);
-            }
-          })
-          .catch((err: number) => {
-            if (mounted) {
-              const code = window.Webex?.Application?.ErrorCodes?.[err] ?? String(err);
-              console.warn("Webex getUser() failed:", code);
-            }
-          });
+        const app = new window.webex.Application();
+        await app.onReady();
+        const sidebar = await app.getSidebar();
+        const isBadgeSet = await sidebar.showBadge({
+        badgeType: 'count',
+        count: 100
+        });
+        const user = app.application.states.user;
+        if (mounted) {
+          console.log("Webex user", user);
+          setWebexUser(user);
+        }
       } catch {
         timerId = setTimeout(tryInit, 300);
       }

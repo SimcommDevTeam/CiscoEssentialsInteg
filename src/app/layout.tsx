@@ -17,7 +17,7 @@ export default function RootLayout({
       <body>
         {children}
         <Script
-          src="https://binaries.webex.com/static-content-pipeline/webex-embedded-app/v1/webex-embedded-app-sdk.js"
+          src="https://unpkg.com/@webex/embedded-app-sdk@latest"
           strategy="afterInteractive"
         />
       </body>
