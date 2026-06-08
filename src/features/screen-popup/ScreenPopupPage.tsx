@@ -227,7 +227,7 @@ export function ScreenPopupPage() {
         await app.onReady();
 
         try {
-          const sidebar = await app.getSidebar();
+          const sidebar = await app.context.getSidebar();
           console.log("Webex sidebar", sidebar);
           const sidebarStr = JSON.stringify(sidebar, null, 2);
           setWebexDebugInfo("Sidebar object:\n" + (sidebarStr === "{}" ? "(no enumerable props — see console)" : sidebarStr));

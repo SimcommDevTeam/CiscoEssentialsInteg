@@ -22,9 +22,13 @@ interface WebexSidebar {
   showBadge(options: WebexBadgeOptions): Promise<boolean>;
 }
 
+interface WebexContext {
+  getSidebar(): Promise<WebexSidebar>;
+}
+
 interface WebexApplicationInstance {
   onReady(): Promise<void>;
-  getSidebar(): Promise<WebexSidebar>;
+  context: WebexContext;
   application: WebexApplicationInfo;
 }
 
