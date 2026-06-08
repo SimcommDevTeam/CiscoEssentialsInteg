@@ -1,4 +1,4 @@
-export type { WebexUser } from "./webex";
+export type { WebexUser, WebexApplicationInstance } from "./webex";
 
 export interface IncomingCall {
   ani: string;

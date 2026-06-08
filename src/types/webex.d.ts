@@ -26,36 +26,35 @@ interface WebexContext {
   getSidebar(): Promise<WebexSidebar>;
 }
 
-interface WebexApplicationInstance {
-  onReady(): Promise<void>;
-  context: WebexContext;
-  application: WebexApplicationInfo;
+interface WebexCall {
+  id: string;
+  state: "Started" | "Connected" | "Ended" | string;
+  callType?: string;
+  localParticipant?: unknown;
+  remoteParticipants?: unknown[];
 }
 
-interface WebexSidebarApplicationInstance {
+type WebexViewState = "IN_FOCUS" | "OUT_OF_FOCUS" | string;
+
+export interface WebexApplicationInstance {
   onReady(): Promise<void>;
-  getSidebar(): Promise<WebexSidebar>;
+  listen(): Promise<void>;
+  on(event: "sidebar:callStateChanged", handler: (call: WebexCall) => void): void;
+  on(event: "application:viewStateChanged", handler: (viewState: WebexViewState) => void): void;
+  context: WebexContext;
+  application: WebexApplicationInfo;
 }
 
 interface WebexApplicationConstructor {
   new (): WebexApplicationInstance;
 }
 
-interface WebexSidebarApplicationConstructor {
-  new (): WebexSidebarApplicationInstance;
-}
-
 interface WebexGlobal {
   Application: WebexApplicationConstructor;
-}
-
-interface WebexSidebarGlobal {
-  Application: WebexSidebarApplicationConstructor;
 }
 
 declare global {
   interface Window {
     webex?: WebexGlobal;
   }
-  const webex: WebexSidebarGlobal;
 }

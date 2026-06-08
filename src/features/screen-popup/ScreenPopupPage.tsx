@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Database, PhoneCall, Radio, UserRound } from "lucide-react";
 import clsx from "clsx";
 import { EmptyState, LoadingState } from "@/components/ui/StateViews";
-import type { ScreenPopupCallInfo, ScreenPopupCustomerInfo, ScreenPopupRecord, WebexUser } from "@/types";
+import type { ScreenPopupCallInfo, ScreenPopupCustomerInfo, ScreenPopupRecord, WebexUser, WebexApplicationInstance } from "@/types";
 
 interface ScreenPopupApiResponse {
   mode: "created-from-url" | "active-from-db";
@@ -211,10 +211,27 @@ export function ScreenPopupPage() {
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, [data]);
 
-  // Webex Embedded App SDK — get the agent user identity
+  // Webex Embedded App SDK — user identity + call-state badge
   useEffect(() => {
     let mounted = true;
     let timerId: ReturnType<typeof setTimeout> | null = null;
+    let callCount = 0;
+    let appInstance: WebexApplicationInstance | null = null;
+
+    function initializeSidebar(count: number) {
+      if (!appInstance) return;
+      appInstance.context.getSidebar()
+        .then((s) => {
+          console.log("Sidebar ready, showing badge, count:", count);
+          s.showBadge({ badgeType: "count", count })
+            .then((success: boolean) => console.log("sidebar.showBadge() successful.", success))
+            .catch((err: unknown) => console.warn("sidebar.showBadge() failed:", err));
+        })
+        .catch((err: unknown) => {
+          console.warn("getSidebar() failed:", err);
+          setWebexDebugInfo("getSidebar() error:\n" + (err instanceof Error ? err.message : String(err)));
+        });
+    }
 
     async function tryInit() {
       if (!mounted) return;
@@ -224,26 +241,34 @@ export function ScreenPopupPage() {
       }
       try {
         const app = new window.webex.Application();
+        appInstance = app;
         await app.onReady();
 
-        try {
-          const sidebar = await app.context.getSidebar();
-          //console.log("Webex sidebar", sidebar);
-          //const sidebarStr = JSON.stringify(sidebar, null, 2);
-          //setWebexDebugInfo("Sidebar object:\n" + (sidebarStr === "{}" ? "(no enumerable props — see console)" : sidebarStr));
-          await sidebar.showBadge({ badgeType: "count", count: 1 });
-        } catch (sidebarErr) {
-          const msg = sidebarErr instanceof Error ? sidebarErr.message : String(sidebarErr);
-          console.warn("getSidebar failed:", sidebarErr);
-          setWebexDebugInfo("getSidebar() error:\n" + msg);
-        }
+        // Listen for call and view-state events
+        await app.listen();
 
+        app.on("sidebar:callStateChanged", (call) => {
+          console.log("Call state changed. Call object:", call);
+          if (call.state === "Started") {
+            console.log("A call has come in — caller ID:", call.id);
+            callCount++;
+            initializeSidebar(callCount);
+          }
+        });
+
+        app.on("application:viewStateChanged", (viewState) => {
+          console.log("View state changed. Current view:", viewState);
+          if (viewState === "IN_FOCUS") {
+            // User noticed the badge and focused the panel — refresh sidebar
+            initializeSidebar(callCount);
+          }
+        });
+
+        // Fetch agent user identity (unchanged)
         const user = app.application.states.user;
         if (mounted) {
           console.log("Webex user", user);
-          setWebexDebugInfo(prev =>
-            (prev ? prev + "\n\n" : "") + "User object:\n" + JSON.stringify(user, null, 2)
-          );
+          setWebexDebugInfo("User object:\n" + JSON.stringify(user, null, 2));
           setWebexUser(user);
         }
       } catch (err) {
