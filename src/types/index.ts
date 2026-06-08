@@ -31,11 +31,8 @@ export interface ScreenPopupCustomerInfo {
 export interface ScreenPopupRecord {
   id: number;
   status: "active" | "ended" | string;
-<<<<<<< HEAD
-=======
   disposition: string | null;
   dispositionSub: string | null;
->>>>>>> prod
   createdAt: string;
   updatedAt: string | null;
   callInfo: ScreenPopupCallInfo;
