@@ -223,11 +223,11 @@ export function ScreenPopupPage() {
       try {
         const app = new window.webex.Application();
         await app.onReady();
-        const sidebar = await app.getSidebar();
+        /*const sidebar = await app.getSidebar();
         const isBadgeSet = await sidebar.showBadge({
         badgeType: 'count',
         count: 100
-        });
+        });*/
         const user = app.application.states.user;
         if (mounted) {
           console.log("Webex user", user);
