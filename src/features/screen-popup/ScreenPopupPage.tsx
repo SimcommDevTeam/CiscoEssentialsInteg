@@ -243,20 +243,6 @@ export function ScreenPopupPage() {
             .then((success: boolean) => console.log("sidebar.showBadge() successful.", success))
             .catch((err: unknown) => console.warn("sidebar.showBadge() failed:", err));
 
-          // Attempt focus — try the most likely method names
-          const sAny = s as unknown as Record<string, unknown>;
-          if (typeof sAny["focus"] === "function") {
-            console.log("Calling sidebar.focus()");
-            (sAny["focus"] as () => void)();
-          } else if (typeof sAny["setFocus"] === "function") {
-            console.log("Calling sidebar.setFocus()");
-            (sAny["setFocus"] as () => void)();
-          } else if (typeof sAny["activate"] === "function") {
-            console.log("Calling sidebar.activate()");
-            (sAny["activate"] as () => void)();
-          } else {
-            console.log("No focus method found on sidebar — check debug panel for available methods.");
-          }
         })
         .catch((err: unknown) => {
           console.warn("getSidebar() failed:", err);
@@ -284,24 +270,6 @@ export function ScreenPopupPage() {
             console.log("A call has come in — caller ID:", call.id);
             callCount++;
             initializeSidebar(callCount);
-
-            // Programmatically set viewState to IN_FOCUS so sidebar auto-focuses
-            const appAny = app as unknown as Record<string, unknown>;
-            const appMethods = Object.getOwnPropertyNames(Object.getPrototypeOf(app));
-            console.log("App methods:", appMethods);
-            setWebexDebugInfo(prev =>
-              (prev ? prev + "\n\n" : "") + "App methods:\n" + appMethods.join(", ")
-            );
-            if (typeof appAny["setFocus"] === "function") {
-              console.log("Calling app.setFocus()");
-              (appAny["setFocus"] as () => void)();
-            } else if (typeof appAny["setViewState"] === "function") {
-              console.log("Calling app.setViewState(IN_FOCUS)");
-              (appAny["setViewState"] as (s: string) => void)("IN_FOCUS");
-            } else if (typeof appAny["emit"] === "function") {
-              console.log("Calling app.emit(application:viewStateChanged, IN_FOCUS)");
-              (appAny["emit"] as (e: string, v: string) => void)("application:viewStateChanged", "IN_FOCUS");
-            }
           }
         });
 
