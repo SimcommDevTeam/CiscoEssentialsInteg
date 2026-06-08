@@ -2,15 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import type { ScreenPopupCallInfo, ScreenPopupCustomerInfo } from "@/types";
 import {
   getScreenPopupInfoByStatus,
-<<<<<<< HEAD
-  saveScreenPopupInfo
-} from "@/lib/server/screenPopupRepository";
-=======
   saveDisposition,
   saveScreenPopupInfo
 } from "@/lib/server/screenPopupRepository";
 import { getAPIConfigs } from "@/lib/server/apiConfigRepository";
->>>>>>> prod
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -43,12 +38,6 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const hasCallQuery = queryKeys.some((key) => searchParams.has(key));
-<<<<<<< HEAD
-    const ended = await getScreenPopupInfoByStatus("ended");
-
-    if (!hasCallQuery) {
-      const active = await getScreenPopupInfoByStatus("active");
-=======
 
     // With call query params: agentId comes from the URL's AgentID field.
     // Without call query params: agentId comes from the ?agentId= param passed by the frontend
@@ -61,7 +50,6 @@ export async function GET(request: NextRequest) {
 
     if (!hasCallQuery) {
       const active = await getScreenPopupInfoByStatus("active", agentId);
->>>>>>> prod
 
       return NextResponse.json({
         mode: "active-from-db",
@@ -97,8 +85,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-<<<<<<< HEAD
-=======
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
@@ -126,7 +112,6 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
->>>>>>> prod
 function formatError(error: unknown) {
   if (!(error instanceof Error)) {
     return "Unable to load screen popup info";
@@ -166,16 +151,8 @@ function readCallInfo(searchParams: URLSearchParams): ScreenPopupCallInfo {
 }
 
 async function fetchSalesforceContact(ani: string): Promise<SalesforceContactResponse> {
-<<<<<<< HEAD
-  const token = process.env.SALESFORCE_BEARER_TOKEN;
-
-  if (!token) {
-    throw new Error("SALESFORCE_BEARER_TOKEN environment variable is required");
-  }
-=======
   const config = await getAPIConfigs(["SALESFORCE_BEARER_TOKEN"]);
   const Salestoken = config.SALESFORCE_BEARER_TOKEN;
->>>>>>> prod
 
   const soql = `SELECT Email,name,id,phone,MailingCity,MailingCountry from contact where phone ='${escapeSoql(
     ani
@@ -185,11 +162,7 @@ async function fetchSalesforceContact(ani: string): Promise<SalesforceContactRes
   )}`;
   const response = await fetch(url, {
     headers: {
-<<<<<<< HEAD
-      Authorization: `Bearer ${token}`,
-=======
       Authorization: `Bearer ${Salestoken}`,
->>>>>>> prod
       Accept: "application/json"
     },
     cache: "no-store"

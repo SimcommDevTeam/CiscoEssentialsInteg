@@ -1,9 +1,6 @@
 import sql from "mssql";
 import type { ScreenPopupCallInfo, ScreenPopupCustomerInfo, ScreenPopupRecord } from "@/types";
-<<<<<<< HEAD
-=======
 import { getPool } from "./dbPool";
->>>>>>> prod
 
 interface DbRow {
   Id: number;
@@ -21,47 +18,13 @@ interface DbRow {
   Phone: string | null;
   MailingCity: string | null;
   MailingCountry: string | null;
-<<<<<<< HEAD
-=======
   Disposition: string | null;
   DispositionSub: string | null;
->>>>>>> prod
   Status: string;
   CreatedAt: Date;
   UpdatedAt: Date | null;
 }
 
-<<<<<<< HEAD
-let poolPromise: Promise<sql.ConnectionPool> | undefined;
-
-function requiredEnv(name: string) {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`${name} environment variable is required`);
-  }
-  return value;
-}
-
-function getPool() {
-  if (!poolPromise) {
-    const port = Number(process.env.SQL_PORT ?? "1433");
-
-    poolPromise = sql.connect({
-      server: requiredEnv("SQL_SERVER"),
-      database: requiredEnv("SQL_DATABASE"),
-      user: requiredEnv("SQL_USER"),
-      password: requiredEnv("SQL_PASSWORD"),
-      port,
-      options: {
-        encrypt: process.env.SQL_ENCRYPT !== "false",
-        trustServerCertificate: process.env.SQL_TRUST_SERVER_CERTIFICATE === "true"
-      }
-    });
-  }
-
-  return poolPromise;
-}
-=======
 interface DispositionRow {
   Id: number;
   Disposition: string | null;
@@ -69,7 +32,6 @@ interface DispositionRow {
   UpdatedAt: Date | null;
 }
 
->>>>>>> prod
 
 export async function saveScreenPopupInfo(
   callInfo: ScreenPopupCallInfo,
@@ -102,19 +64,12 @@ export async function saveScreenPopupInfo(
   return mapRow(result.recordset[0]);
 }
 
-<<<<<<< HEAD
-export async function getScreenPopupInfoByStatus(status: "active" | "ended") {
-=======
 export async function getScreenPopupInfoByStatus(status: "active" | "ended", agentId?: string | null) {
->>>>>>> prod
   const pool = await getPool();
   const request = pool.request();
 
   request.input("Status", sql.NVarChar(20), status);
-<<<<<<< HEAD
-=======
   request.input("AgentId", sql.NVarChar(100), agentId ?? null);
->>>>>>> prod
   const result = await request.execute<DbRow>("dbo.usp_GetScreenPopupInfoByStatus");
 
   return result.recordset.map(mapRow);
@@ -129,8 +84,6 @@ export async function testScreenPopupDbConnection() {
   return result.recordset[0];
 }
 
-<<<<<<< HEAD
-=======
 export async function saveDisposition(id: number, disposition: string, dispositionSub: string) {
   const pool = await getPool();
   const request = pool.request();
@@ -143,16 +96,12 @@ export async function saveDisposition(id: number, disposition: string, dispositi
   return result.recordset[0];
 }
 
->>>>>>> prod
 function mapRow(row: DbRow): ScreenPopupRecord {
   return {
     id: row.Id,
     status: row.Status,
-<<<<<<< HEAD
-=======
     disposition: row.Disposition ?? null,
     dispositionSub: row.DispositionSub ?? null,
->>>>>>> prod
     createdAt: row.CreatedAt.toISOString(),
     updatedAt: row.UpdatedAt?.toISOString() ?? null,
     callInfo: {
