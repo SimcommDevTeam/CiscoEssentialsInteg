@@ -226,6 +226,8 @@ export function ScreenPopupPage() {
         const sidebarApp = new webex.Application();
         await sidebarApp.onReady();
         const sidebar = await sidebarApp.getSidebar();
+        console.log("Webex sidebar", sidebar);
+        setWebexDebugInfo("Sidebar object:\n" + JSON.stringify(sidebar, null, 2));
         await sidebar.showBadge({ badgeType: "count", count: 100 });
         const app = new window.webex.Application();
         await app.onReady();
