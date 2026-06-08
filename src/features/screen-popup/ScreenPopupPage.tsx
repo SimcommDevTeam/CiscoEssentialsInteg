@@ -309,6 +309,7 @@ export function ScreenPopupPage() {
           console.log("View state changed. Current view:", viewState);
           if (viewState === "IN_FOCUS") {
             // User noticed the badge and focused the panel — refresh sidebar
+            callCount--;
             initializeSidebar(callCount);
           }
         });
