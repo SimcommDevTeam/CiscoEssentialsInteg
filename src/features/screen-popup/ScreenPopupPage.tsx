@@ -54,6 +54,8 @@ export function ScreenPopupPage() {
   const agentIdRef = useRef<string | null>(null);
   const activeNotificationRef = useRef<Notification | null>(null);
 
+  const [webexDebugInfo, setWebexDebugInfo] = useState<string | null>(null);
+
   const [dispositionCategory, setDispositionCategory] = useState("");
   const [dispositionSub, setDispositionSub] = useState("");
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -231,14 +233,7 @@ export function ScreenPopupPage() {
         const user = app.application.states.user;
         if (mounted) {
           console.log("Webex user", user);
-          alert(
-            "Webex User Details:\n\n" +
-            "ID: " + (user?.id ?? "N/A") + "\n" +
-            "Display Name: " + (user?.displayName ?? "N/A") + "\n" +
-            "Email: " + (user?.email ?? "N/A") + "\n" +
-            "Org ID: " + (user?.orgId ?? "N/A") + "\n\n" +
-            "Full object:\n" + JSON.stringify(user, null, 2)
-          );
+          setWebexDebugInfo(JSON.stringify(user, null, 2));
           setWebexUser(user);
         }
       } catch {
@@ -356,6 +351,23 @@ export function ScreenPopupPage() {
 
   return (
     <section className="space-y-4">
+
+      {/* ── Webex SDK debug panel ─────────────────────────────────── */}
+      {webexDebugInfo && (
+        <div className="rounded-lg border border-yellow-300 bg-yellow-50 p-4">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-xs font-bold uppercase tracking-wider text-yellow-800">Webex User (SDK Debug)</p>
+            <button
+              type="button"
+              onClick={() => setWebexDebugInfo(null)}
+              className="text-xs text-yellow-700 underline hover:text-yellow-900"
+            >
+              Dismiss
+            </button>
+          </div>
+          <pre className="overflow-x-auto whitespace-pre-wrap break-all text-xs text-yellow-900">{webexDebugInfo}</pre>
+        </div>
+      )}
 
       {/* ── Info cards ────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 gap-4">
