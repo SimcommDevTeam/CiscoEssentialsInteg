@@ -242,7 +242,7 @@ export function ScreenPopupPage() {
           s.showBadge({ badgeType: "count", count })
             .then((success: boolean) => console.log("sidebar.showBadge() successful.", success))
             .catch((err: unknown) => console.warn("sidebar.showBadge() failed:", err));
-          s.showNotification("You have a new message")
+          s.showNotification("You have a new message","https://main.d2h1jevaq3gsyp.amplifyapp.com")
             .then((success: boolean) => console.log("sidebar.showNotification() successful.", success))
             .catch((err: unknown) => console.warn("sidebar.showNotification() failed:", err));
         })

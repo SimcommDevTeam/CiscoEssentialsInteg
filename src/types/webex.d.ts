@@ -20,7 +20,7 @@ interface WebexBadgeOptions {
 
 interface WebexSidebar {
   showBadge(options: WebexBadgeOptions): Promise<boolean>;
-  showNotification(message: string): Promise<boolean>;
+  showNotification(message: string, url?: string): Promise<boolean>;
 }
 
 interface WebexContext {
