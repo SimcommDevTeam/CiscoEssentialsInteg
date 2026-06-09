@@ -265,6 +265,8 @@ export function ScreenPopupPage() {
         await app.listen();
 
         app.on("sidebar:callStateChanged", (call) => {
+           window.open();
+           //application.view.focus();
           console.log("Call state changed. Call object:", call);
           if (call.state === "Started") {
             console.log("A call has come in — caller ID:", call.id);
