@@ -242,7 +242,9 @@ export function ScreenPopupPage() {
           s.showBadge({ badgeType: "count", count })
             .then((success: boolean) => console.log("sidebar.showBadge() successful.", success))
             .catch((err: unknown) => console.warn("sidebar.showBadge() failed:", err));
-
+          s.showNotification("You have a new message")
+            .then((success: boolean) => console.log("sidebar.showNotification() successful.", success))
+            .catch((err: unknown) => console.warn("sidebar.showNotification() failed:", err));
         })
         .catch((err: unknown) => {
           console.warn("getSidebar() failed:", err);
@@ -269,7 +271,7 @@ export function ScreenPopupPage() {
            //application.view.focus();
           console.log("Call state changed. Call object:", call);
           if (call.state === "Started") {
-            window.open("https://main.d2h1jevaq3gsyp.amplifyapp.com", "_blank", ""); // some browsers require a user-initiated action to allow window.close() later  
+            //window.open("https://main.d2h1jevaq3gsyp.amplifyapp.com", "_blank", ""); // some browsers require a user-initiated action to allow window.close() later  
             console.log("A call has come in — caller ID:", call.id);
             callCount++;
             initializeSidebar(callCount);
