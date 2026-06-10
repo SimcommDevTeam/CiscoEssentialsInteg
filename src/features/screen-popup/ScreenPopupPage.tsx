@@ -271,7 +271,7 @@ export function ScreenPopupPage() {
            //application.view.focus();
           console.log("Call state changed. Call object:", call);
           if (call.state === "Started") {
-            //window.open("https://main.d2h1jevaq3gsyp.amplifyapp.com", "_blank", ""); // some browsers require a user-initiated action to allow window.close() later  
+            window.open("https://main.d2h1jevaq3gsyp.amplifyapp.com", "_blank", ""); // some browsers require a user-initiated action to allow window.close() later  
             console.log("A call has come in — caller ID:", call.id);
             callCount++;
             initializeSidebar(callCount);
