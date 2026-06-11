@@ -277,7 +277,7 @@ export function ScreenPopupPage() {
           console.log("Call state changed. Call object:", call);
           if (call.state === "Started") {
             setWebexDebugInfo("User object:\n" + JSON.stringify(call, null, 2));
-            window.open("https://main.d2h1jevaq3gsyp.amplifyapp.com/?TenantID="+ user.orgId +"&InteractionID="+ call.id+"&DNIS="+call.localParticipant+"&QueueID=q1&AgentID="+user.id+"&AgentName="+user.displayName+"&ANI="+call.remoteParticipants[0].number+"&QueueName=q1", "_blank", ""); // some browsers require a user-initiated action to allow window.close() later  
+            window.open("https://main.d2h1jevaq3gsyp.amplifyapp.com/?TenantID="+ user.orgId +"&InteractionID="+ call.id+"&DNIS="+call.localParticipant+"&QueueID=q1&AgentID="+user.id+"&AgentName="+user.displayName+"&ANI="+call.localParticipant+"&QueueName=q1", "_blank", ""); // some browsers require a user-initiated action to allow window.close() later  
             console.log("A call has come in — caller ID:", call.id);
             callCount++;
             initializeSidebar(callCount);
