@@ -272,19 +272,23 @@ export function ScreenPopupPage() {
         await app.listen();
 
         app.on("sidebar:callStateChanged", (call) => {
-          
-           //application.view.focus();
           console.log("Call state changed. Call object:", call);
-          if (call.state === "Started") {
-            setWebexDebugInfo("User object:\n" + JSON.stringify(call, null, 2));
-            window.open("https://main.d2h1jevaq3gsyp.amplifyapp.com/?TenantID="+ user.orgId +"&InteractionID="+ call.id+"&DNIS="+call.localParticipant+"&QueueID=q1&AgentID="+user.id+"&AgentName="+user.displayName+"&ANI="+call.localParticipant+"&QueueName=q1", "_blank", ""); // some browsers require a user-initiated action to allow window.close() later  
+          const callDebug =
+            `Call State: ${call.state}\n` +
+            `Call ID: ${call.id}\n` +
+            `Call Type: ${call.callType ?? "—"}\n` +
+            `Local Participant:\n${JSON.stringify(call.localParticipant, null, 2)}\n` +
+            `Remote Participants:\n${JSON.stringify(call.remoteParticipants, null, 2)}`;
+          setWebexDebugInfo(callDebug);
+
+          if (call.state === "Connected") {
+            window.open("https://main.d2h1jevaq3gsyp.amplifyapp.com/?TenantID="+ user.orgId +"&InteractionID="+ call.id+"&DNIS="+call.localParticipant+"&QueueID=q1&AgentID="+user.id+"&AgentName="+user.displayName+"&ANI="+call.localParticipant+"&QueueName=q1", "_blank", "");
             console.log("A call has come in — caller ID:", call.id);
             callCount++;
             initializeSidebar(callCount);
           }
           if (call.state === "Disconnected") {
-           window.close(); // Attempt to close the tab when the call ends (will only work if the tab was opened by this script and not blocked by the browser)
-            //console.log("A call has come in — caller ID:", call.id);
+            window.close();
             callCount--;
             initializeSidebar(callCount);
           }
