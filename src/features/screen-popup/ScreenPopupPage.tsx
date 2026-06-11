@@ -435,6 +435,22 @@ export function ScreenPopupPage() {
   return (
     <section className="space-y-4">
 
+      {/* ── Compact view (window ≤ 416 px) — show only Call ID ───── */}
+      <div className="hidden max-[416px]:flex flex-col items-center justify-center gap-2 py-6">
+        <PhoneCall className="h-6 w-6 text-webex-blue" />
+        <p className="text-xs font-bold uppercase tracking-wider text-webex-muted">
+          {hasActiveCall ? "Active Call" : "No Active Call"}
+        </p>
+        {hasActiveCall && (
+          <p className="text-sm font-semibold text-webex-navy">
+            {data?.current?.callInfo.InteractionID || "—"}
+          </p>
+        )}
+      </div>
+
+      {/* ── Full content (window > 416 px) ───────────────────────── */}
+      <div className="contents max-[416px]:hidden">
+
       {/* ── Webex SDK debug panel ─────────────────────────────────── */}
       {webexDebugInfo && (
         <div className="rounded-lg border border-yellow-300 bg-yellow-50 p-4">
@@ -617,6 +633,8 @@ export function ScreenPopupPage() {
           </div>
         )}
       </div>
+
+      </div>{/* end full-content wrapper */}
 
     </section>
   );
