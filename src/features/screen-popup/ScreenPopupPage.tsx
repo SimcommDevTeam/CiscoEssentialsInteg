@@ -294,7 +294,7 @@ export function ScreenPopupPage() {
               "&ANI=" + encodeURIComponent(ani) +
               "&QueueName=q1",
               "_blank",
-              "width=747,height=310"
+              "width=416,height=242"
             );
             console.log("A call has come in — caller ID:", call.id);
             callCount++;
