@@ -282,7 +282,20 @@ export function ScreenPopupPage() {
           setWebexDebugInfo(callDebug);
 
           if (call.state === "Connected") {
-            window.open("https://main.d2h1jevaq3gsyp.amplifyapp.com/?TenantID="+ user.orgId +"&InteractionID="+ call.id+"&DNIS="+call.localParticipant+"&QueueID=q1&AgentID="+user.id+"&AgentName="+user.displayName+"&ANI="+call.localParticipant+"&QueueName=q1", "_blank", "");
+            const dnis = call.localParticipant?.callerID ?? "";
+            const ani = call.remoteParticipants?.[0]?.callerID ?? "";
+            window.open(
+              "https://main.d2h1jevaq3gsyp.amplifyapp.com/?TenantID=" + user.orgId +
+              "&InteractionID=" + call.id +
+              "&DNIS=" + encodeURIComponent(dnis) +
+              "&QueueID=q1" +
+              "&AgentID=" + user.id +
+              "&AgentName=" + encodeURIComponent(user.displayName) +
+              "&ANI=" + encodeURIComponent(ani) +
+              "&QueueName=q1",
+              "_blank",
+              "width=747,height=310"
+            );
             console.log("A call has come in — caller ID:", call.id);
             callCount++;
             initializeSidebar(callCount);

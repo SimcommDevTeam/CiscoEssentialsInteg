@@ -27,12 +27,18 @@ interface WebexContext {
   getSidebar(): Promise<WebexSidebar>;
 }
 
+interface WebexParticipant {
+  callerID?: string;
+  name?: string;
+  isMuted?: boolean;
+}
+
 interface WebexCall {
   id: string;
   state: "Started" | "Connected" | "Ended" | string;
   callType?: string;
-  localParticipant?: unknown;
-  remoteParticipants?: unknown[];
+  localParticipant?: WebexParticipant;
+  remoteParticipants?: WebexParticipant[];
 }
 
 type WebexViewState = "IN_FOCUS" | "OUT_OF_FOCUS" | string;
