@@ -236,7 +236,7 @@ export function ScreenPopupPage() {
           // Log all available methods so we can identify the focus API
           const methods = getSidebarMethods(s);
           console.log("Sidebar available methods:", methods);
-          setWebexDebugInfo("Sidebar methods:\n" + methods.join(", "));
+          //setWebexDebugInfo("Sidebar methods:\n" + methods.join(", "));
 
           // Show badge
           s.showBadge({ badgeType: "count", count })
@@ -248,7 +248,7 @@ export function ScreenPopupPage() {
         })
         .catch((err: unknown) => {
           console.warn("getSidebar() failed:", err);
-          setWebexDebugInfo("getSidebar() error:\n" + (err instanceof Error ? err.message : String(err)));
+          //setWebexDebugInfo("getSidebar() error:\n" + (err instanceof Error ? err.message : String(err)));
         });
     }
 
@@ -265,7 +265,7 @@ export function ScreenPopupPage() {
         const user = app.application.states.user;
         if (mounted) {
           console.log("Webex user", user);
-          setWebexDebugInfo("User object:\n" + JSON.stringify(user, null, 2));
+          //setWebexDebugInfo("User object:\n" + JSON.stringify(user, null, 2));
           setWebexUser(user);
         }
         // Listen for call and view-state events
@@ -273,13 +273,13 @@ export function ScreenPopupPage() {
 
         app.on("sidebar:callStateChanged", (call) => {
           console.log("Call state changed. Call object:", call);
-          const callDebug =
-            `Call State: ${call.state}\n` +
-            `Call ID: ${call.id}\n` +
-            `Call Type: ${call.callType ?? "—"}\n` +
-            `Local Participant:\n${JSON.stringify(call.localParticipant, null, 2)}\n` +
-            `Remote Participants:\n${JSON.stringify(call.remoteParticipants, null, 2)}`;
-          setWebexDebugInfo(callDebug);
+          //const callDebug =
+          //  `Call State: ${call.state}\n` +
+          //  `Call ID: ${call.id}\n` +
+          //  `Call Type: ${call.callType ?? "—"}\n` +
+          //  `Local Participant:\n${JSON.stringify(call.localParticipant, null, 2)}\n` +
+          //  `Remote Participants:\n${JSON.stringify(call.remoteParticipants, null, 2)}`;
+          //setWebexDebugInfo(callDebug);
 
           if (call.state === "Connected") {
             const dnis = call.localParticipant?.callerID ?? "";
