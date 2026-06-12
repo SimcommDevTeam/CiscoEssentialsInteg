@@ -1,8 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Database, PhoneCall, Radio, UserRound } from "lucide-react";
+import { AlertCircle, Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Database, PhoneCall, Radio, UserRound } from "lucide-react";
 import clsx from "clsx";
+import * as AlertDialog from "@radix-ui/react-alert-dialog";
+import * as Select from "@radix-ui/react-select";
+import * as Toast from "@radix-ui/react-toast";
+import * as Tooltip from "@radix-ui/react-tooltip";
 import { EmptyState, LoadingState } from "@/components/ui/StateViews";
 import type { ScreenPopupCallInfo, ScreenPopupCustomerInfo, ScreenPopupRecord, WebexUser, WebexApplicationInstance } from "@/types";
 
@@ -60,6 +64,9 @@ export function ScreenPopupPage() {
   const [dispositionSub, setDispositionSub] = useState("");
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [saveError, setSaveError] = useState("");
+  const [showCloseDialog, setShowCloseDialog] = useState(false);
+  const [toastOpen, setToastOpen] = useState(false);
+  const [toastData, setToastData] = useState<{ message: string; type: "success" | "error" }>({ message: "", type: "success" });
 
   const endedRecords = data?.ended ?? [];
   const endedPageCount = Math.max(1, Math.ceil(endedRecords.length / endedPageSize));
@@ -331,6 +338,14 @@ export function ScreenPopupPage() {
     };
   }, []);
 
+  function handleCloseTab() {
+    window.open("", "_self", "");
+    window.close();
+    setTimeout(() => {
+      if (!window.closed) window.location.replace("about:blank");
+    }, 300);
+  }
+
   async function handleSaveDisposition() {
     if (!data?.current || !dispositionCategory || !dispositionSub) return;
     setSaveStatus("saving");
@@ -346,18 +361,16 @@ export function ScreenPopupPage() {
         throw new Error(payload.error ?? "Failed to save disposition");
       }
       setSaveStatus("saved");
+      setToastData({ message: "Disposition saved successfully", type: "success" });
+      setToastOpen(true);
       const hasCallQuery = CALL_QUERY_KEYS.some(k => new URLSearchParams(window.location.search).has(k));
-      if (hasCallQuery && window.confirm("Disposition saved successfully. Close this tab?")) {
-        window.open("", "_self", "");
-        window.close();
-        // Fallback: if window.close() was blocked, navigate away
-        setTimeout(() => {
-          if (!window.closed) window.location.replace("about:blank");
-        }, 300);
-      }
+      if (hasCallQuery) setShowCloseDialog(true);
     } catch (err) {
       setSaveStatus("error");
-      setSaveError(err instanceof Error ? err.message : "Failed to save disposition");
+      const msg = err instanceof Error ? err.message : "Failed to save disposition";
+      setSaveError(msg);
+      setToastData({ message: msg, type: "error" });
+      setToastOpen(true);
     }
   }
 
@@ -385,28 +398,70 @@ export function ScreenPopupPage() {
         Disposition
       </label>
       <div className="flex flex-col gap-2">
-        <select
+        {/* Category select */}
+        <Select.Root
           value={dispositionCategory}
-          onChange={(e) => { setDispositionCategory(e.target.value); setDispositionSub(""); setSaveStatus("idle"); }}
-          className="h-9 w-full rounded-md border border-webex-line bg-webex-canvas px-3 text-xs text-webex-ink transition focus:border-webex-blue focus:bg-white focus:outline-none"
+          onValueChange={(val) => { setDispositionCategory(val); setDispositionSub(""); setSaveStatus("idle"); }}
         >
-          <option value="">Select category…</option>
-          {Object.keys(DISPOSITION_TREE).map((cat) => (
-            <option key={cat} value={cat}>{cat}</option>
-          ))}
-        </select>
+          <Select.Trigger className="flex h-9 w-full items-center justify-between rounded-md border border-webex-line bg-webex-canvas px-3 text-xs text-webex-ink transition focus:border-webex-blue focus:bg-white focus:outline-none data-[placeholder]:text-webex-muted">
+            <Select.Value placeholder="Select category…" />
+            <Select.Icon asChild>
+              <ChevronDown className="h-3.5 w-3.5 text-webex-muted" />
+            </Select.Icon>
+          </Select.Trigger>
+          <Select.Portal>
+            <Select.Content className="z-50 overflow-hidden rounded-md border border-webex-line bg-white shadow-lg">
+              <Select.Viewport className="p-1">
+                {Object.keys(DISPOSITION_TREE).map((cat) => (
+                  <Select.Item
+                    key={cat}
+                    value={cat}
+                    className="flex cursor-pointer items-center gap-2 rounded px-3 py-1.5 text-xs text-webex-ink outline-none hover:bg-webex-blue-light focus:bg-webex-blue-light"
+                  >
+                    <Select.ItemText>{cat}</Select.ItemText>
+                    <Select.ItemIndicator className="ml-auto">
+                      <Check className="h-3 w-3 text-webex-blue" />
+                    </Select.ItemIndicator>
+                  </Select.Item>
+                ))}
+              </Select.Viewport>
+            </Select.Content>
+          </Select.Portal>
+        </Select.Root>
+
+        {/* Sub-disposition select */}
         {dispositionCategory && (
-          <select
+          <Select.Root
             value={dispositionSub}
-            onChange={(e) => { setDispositionSub(e.target.value); setSaveStatus("idle"); }}
-            className="h-9 w-full rounded-md border border-webex-line bg-webex-canvas px-3 text-xs text-webex-ink transition focus:border-webex-blue focus:bg-white focus:outline-none"
+            onValueChange={(val) => { setDispositionSub(val); setSaveStatus("idle"); }}
           >
-            <option value="">Select disposition…</option>
-            {(DISPOSITION_TREE[dispositionCategory] ?? []).map((sub) => (
-              <option key={sub} value={sub}>{sub}</option>
-            ))}
-          </select>
+            <Select.Trigger className="flex h-9 w-full items-center justify-between rounded-md border border-webex-line bg-webex-canvas px-3 text-xs text-webex-ink transition focus:border-webex-blue focus:bg-white focus:outline-none data-[placeholder]:text-webex-muted">
+              <Select.Value placeholder="Select disposition…" />
+              <Select.Icon asChild>
+                <ChevronDown className="h-3.5 w-3.5 text-webex-muted" />
+              </Select.Icon>
+            </Select.Trigger>
+            <Select.Portal>
+              <Select.Content className="z-50 overflow-hidden rounded-md border border-webex-line bg-white shadow-lg">
+                <Select.Viewport className="p-1">
+                  {(DISPOSITION_TREE[dispositionCategory] ?? []).map((sub) => (
+                    <Select.Item
+                      key={sub}
+                      value={sub}
+                      className="flex cursor-pointer items-center gap-2 rounded px-3 py-1.5 text-xs text-webex-ink outline-none hover:bg-webex-blue-light focus:bg-webex-blue-light"
+                    >
+                      <Select.ItemText>{sub}</Select.ItemText>
+                      <Select.ItemIndicator className="ml-auto">
+                        <Check className="h-3 w-3 text-webex-blue" />
+                      </Select.ItemIndicator>
+                    </Select.Item>
+                  ))}
+                </Select.Viewport>
+              </Select.Content>
+            </Select.Portal>
+          </Select.Root>
         )}
+
         <button
           type="button"
           onClick={handleSaveDisposition}
@@ -416,23 +471,11 @@ export function ScreenPopupPage() {
           {saveStatus === "saving" ? "Saving…" : "Save"}
         </button>
       </div>
-
-      {saveStatus === "saved" && (
-        <div className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-green-600">
-          <CheckCircle2 className="h-3.5 w-3.5" />
-          Disposition saved successfully
-        </div>
-      )}
-      {saveStatus === "error" && (
-        <div className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-red-600">
-          <AlertCircle className="h-3.5 w-3.5" />
-          {saveError}
-        </div>
-      )}
     </div>
   ) : null;
 
   return (
+    <Toast.Provider swipeDirection="right">
     <section className="space-y-4">
 
       {/* ── Compact view (window ≤ 416 px) — show only Call ID ───── */}
@@ -599,29 +642,53 @@ export function ScreenPopupPage() {
                 </span>{" "}
                 of <span className="font-semibold text-webex-ink">{endedRecords.length}</span> records
               </p>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setEndedPage((p) => Math.max(1, p - 1))}
-                  disabled={endedPage === 1}
-                  className="grid h-7 w-7 place-items-center rounded-md border border-webex-line bg-white text-webex-muted transition hover:border-webex-blue hover:text-webex-blue disabled:cursor-not-allowed disabled:opacity-40"
-                  aria-label="Previous page"
-                >
-                  <ChevronLeft className="h-3.5 w-3.5" />
-                </button>
-                <span className="text-xs font-semibold text-webex-ink">
-                  Page {endedPage} of {endedPageCount}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setEndedPage((p) => Math.min(endedPageCount, p + 1))}
-                  disabled={endedPage === endedPageCount}
-                  className="grid h-7 w-7 place-items-center rounded-md border border-webex-line bg-white text-webex-muted transition hover:border-webex-blue hover:text-webex-blue disabled:cursor-not-allowed disabled:opacity-40"
-                  aria-label="Next page"
-                >
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </button>
-              </div>
+              <Tooltip.Provider delayDuration={300}>
+                <div className="flex items-center gap-2">
+                  <Tooltip.Root>
+                    <Tooltip.Trigger asChild>
+                      <button
+                        type="button"
+                        onClick={() => setEndedPage((p) => Math.max(1, p - 1))}
+                        disabled={endedPage === 1}
+                        className="grid h-7 w-7 place-items-center rounded-md border border-webex-line bg-white text-webex-muted transition hover:border-webex-blue hover:text-webex-blue disabled:cursor-not-allowed disabled:opacity-40"
+                        aria-label="Previous page"
+                      >
+                        <ChevronLeft className="h-3.5 w-3.5" />
+                      </button>
+                    </Tooltip.Trigger>
+                    <Tooltip.Portal>
+                      <Tooltip.Content className="rounded bg-webex-navy px-2 py-1 text-xs text-white" sideOffset={4}>
+                        Previous page
+                        <Tooltip.Arrow className="fill-webex-navy" />
+                      </Tooltip.Content>
+                    </Tooltip.Portal>
+                  </Tooltip.Root>
+
+                  <span className="text-xs font-semibold text-webex-ink">
+                    Page {endedPage} of {endedPageCount}
+                  </span>
+
+                  <Tooltip.Root>
+                    <Tooltip.Trigger asChild>
+                      <button
+                        type="button"
+                        onClick={() => setEndedPage((p) => Math.min(endedPageCount, p + 1))}
+                        disabled={endedPage === endedPageCount}
+                        className="grid h-7 w-7 place-items-center rounded-md border border-webex-line bg-white text-webex-muted transition hover:border-webex-blue hover:text-webex-blue disabled:cursor-not-allowed disabled:opacity-40"
+                        aria-label="Next page"
+                      >
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      </button>
+                    </Tooltip.Trigger>
+                    <Tooltip.Portal>
+                      <Tooltip.Content className="rounded bg-webex-navy px-2 py-1 text-xs text-white" sideOffset={4}>
+                        Next page
+                        <Tooltip.Arrow className="fill-webex-navy" />
+                      </Tooltip.Content>
+                    </Tooltip.Portal>
+                  </Tooltip.Root>
+                </div>
+              </Tooltip.Provider>
             </div>
           </>
         ) : (
@@ -637,6 +704,63 @@ export function ScreenPopupPage() {
       </div>{/* end full-content wrapper */}
 
     </section>
+
+    {/* ── AlertDialog — close tab confirmation ──────────────────── */}
+    <AlertDialog.Root open={showCloseDialog} onOpenChange={setShowCloseDialog}>
+      <AlertDialog.Portal>
+        <AlertDialog.Overlay className="fixed inset-0 z-40 bg-black/40" />
+        <AlertDialog.Content className="fixed left-1/2 top-1/2 z-50 w-72 -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white p-6 shadow-xl focus:outline-none">
+          <AlertDialog.Title className="text-sm font-bold text-webex-navy">
+            Close Tab?
+          </AlertDialog.Title>
+          <AlertDialog.Description className="mt-2 text-xs leading-relaxed text-webex-muted">
+            Disposition saved successfully. Do you want to close this tab?
+          </AlertDialog.Description>
+          <div className="mt-5 flex justify-end gap-2">
+            <AlertDialog.Cancel asChild>
+              <button className="h-8 rounded-md border border-webex-line px-3 text-xs text-webex-ink transition hover:bg-webex-canvas">
+                Stay
+              </button>
+            </AlertDialog.Cancel>
+            <AlertDialog.Action asChild>
+              <button
+                onClick={handleCloseTab}
+                className="h-8 rounded-md bg-webex-blue px-3 text-xs font-bold text-white transition hover:bg-webex-blue-dark"
+              >
+                Close Tab
+              </button>
+            </AlertDialog.Action>
+          </div>
+        </AlertDialog.Content>
+      </AlertDialog.Portal>
+    </AlertDialog.Root>
+
+    {/* ── Toast notification ────────────────────────────────────── */}
+    <Toast.Root
+      open={toastOpen}
+      onOpenChange={setToastOpen}
+      duration={4000}
+      className={clsx(
+        "flex items-center gap-3 rounded-lg border p-4 shadow-lg",
+        toastData.type === "success" ? "border-green-200 bg-white" : "border-red-200 bg-white"
+      )}
+    >
+      <div className="flex items-center gap-2">
+        {toastData.type === "success"
+          ? <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" />
+          : <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
+        }
+        <Toast.Description className="text-xs font-semibold text-webex-ink">
+          {toastData.message}
+        </Toast.Description>
+      </div>
+      <Toast.Action altText="Dismiss" asChild>
+        <button className="ml-auto text-xs text-webex-muted hover:text-webex-ink">✕</button>
+      </Toast.Action>
+    </Toast.Root>
+    <Toast.Viewport className="fixed bottom-4 right-4 z-50 flex max-h-screen w-80 flex-col gap-2 outline-none" />
+
+    </Toast.Provider>
   );
 }
 
